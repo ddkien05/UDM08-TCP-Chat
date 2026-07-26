@@ -75,3 +75,19 @@ git add .
 git commit -m "Add TCP Server"
 git push origin feature/tcp-server
 Sau đó tạo Pull Request
+🔄 Quy trình làm việc hằng ngày
+
+Trước khi bắt đầu code:
+
+git checkout main
+git pull origin main
+git checkout ten-branch-cua-ban
+git merge main
+
+Sau khi code xong:
+
+git add .
+git commit -m "Mo ta chuc nang"
+git push origin ten-branch-cua-ban
+
+Sau đó tạo Pull Request.
