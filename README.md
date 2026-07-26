@@ -63,7 +63,7 @@ UDM08-TCP-Chat/
 
 Sau khi được mời, thành viên làm:
 git clone link-repository
-cd UDM08-TCP-Chat-CSharp
+cd UDM08-TCP-Chat
 
 Sau đó tạo branch riêng:
 VD:sever
