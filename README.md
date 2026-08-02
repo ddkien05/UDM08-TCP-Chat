@@ -36,12 +36,12 @@
 
 | Thành viên | Nhiệm vụ |
 |---|---|
-| Thành viên 1 | TCP Server và quản lý Client |
-| Thành viên 2 | TCP Client và gửi/nhận tin nhắn |
-| Thành viên 3 | Giao diện WinForms và danh sách liên hệ |
-| Thành viên 4 | Chức năng Reply và Forward |
-| Thành viên 5 | Emoji và xử lý hiển thị tin nhắn |
-| Thành viên 6 | Tích hợp, kiểm thử, báo cáo và demo |
+| Thành viên 1 |  |
+| Thành viên 2 |  |
+| Thành viên 3 |  |
+| Thành viên 4 |  |
+| Thành viên 5 |  |
+| Thành viên 6 |  |
 
 ## 📂 Cấu trúc dự án
 
