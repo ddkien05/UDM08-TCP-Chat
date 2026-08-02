@@ -45,21 +45,7 @@
 
 ## 📂 Cấu trúc dự án
 
-```text
-UDM08-TCP-Chat/
-│
-├── Server/
-│   └── TCP Chat Server
-│
-├── Client/
-│   └── TCP Chat Client
-│
-├── Shared/
-│   └── Models
-│   └── Message Protocol
-│
-├── README.md
-└── .gitignore
+
 
 Sau khi được mời, thành viên làm:
 git clone link-repository
