@@ -45,10 +45,27 @@
 
 ## 📂 Cấu trúc dự án
 
-
-
-//
-
+```
+ChatTCP/
+│
+├── .gitignore                  # Danh sách file/thư mục được Git bỏ qua
+│
+├── ChatTCP.Client/             # Ứng dụng Client (WPF)
+│   ├── Dependencies/           # Thư viện và package sử dụng
+│   ├── App.xaml                # Điểm khởi tạo ứng dụng WPF
+│   ├── AssemblyInfo.cs         # Thông tin Assembly
+│   └── MainWindow.xaml         # Giao diện chính của Client
+│
+├── ChatTCP.Common/             # Thư viện dùng chung giữa Client và Server
+│   ├── Dependencies/
+│   └── Class1.cs               # Chứa các lớp/model dùng chung (sẽ mở rộng sau)
+│
+├── ChatTCP.Server/             # Ứng dụng Server Console
+│   ├── Dependencies/           # Thư viện và package sử dụng
+│   └── Program.cs              # Điểm khởi chạy Server
+│
+└── ChatTCP.sln                 # File Solution của Visual Studio
+```
 
 
 Sau khi được mời, thành viên làm:
