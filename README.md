@@ -1,14 +1,14 @@
 # UDM08 - TCP Chat
 
-Ứng dụng Chat Client - Server sử dụng giao thức **TCP** được phát triển bằng **C# Windows Forms** trên **Visual Studio**.
+Ứng dụng chat Client-Server sử dụng giao thức TCP.
 
 ## 📌 Giới thiệu
 
-Đây là dự án nhóm thực hiện đề tài **UDM08 - TCP Chat**.
+Đây là dự án nhóm thực hiện đề tài UDM_08:
 
-Ứng dụng cho phép nhiều người dùng kết nối đến Server và trò chuyện với nhau theo mô hình **Client - Server** thông qua **TCP Socket**.
+> Xây dựng ứng dụng Chat Client-Server sử dụng giao thức TCP.
 
----
+Ứng dụng cho phép nhiều người dùng kết nối đến Server và trò chuyện với nhau thông qua giao diện đồ họa.
 
 ## 🛠️ Công nghệ sử dụng
 
@@ -16,79 +16,88 @@
 - .NET
 - Windows Forms (WinForms)
 - TCP Socket
-- JSON
 - Git & GitHub
-- Visual Studio 2022
+- JSON (định dạng dữ liệu tin nhắn)
 
----
+## ✨ Chức năng chính
 
-## ✨ Chức năng
-
-- Kết nối Client - Server
-- Chat nhiều người dùng
+- Kết nối Client - Server thông qua TCP
+- Chat giữa nhiều người dùng
+- Hiển thị danh sách người dùng/liên hệ
+- Hiển thị avatar
 - Gửi và nhận tin nhắn
-- Reply & Forward tin nhắn
-- Hiển thị Emoji
-- Hiển thị Avatar
-- Hiển thị trạng thái Online/Offline
+- Reply tin nhắn
+- Forward tin nhắn
+- Gửi và hiển thị Emoji
+- Hiển thị trạng thái người dùng
+- Xử lý kết nối và ngắt kết nối
 
----
-
-## 👥 Thành viên
+## 👥 Phân công thành viên
 
 | Thành viên | Nhiệm vụ |
-|------------|----------|
-| Thành viên 1 | |
-| Thành viên 2 | |
-| Thành viên 3 | |
-| Thành viên 4 | |
-| Thành viên 5 | |
-| Thành viên 6 | |
-
----
+|---|---|
+| Thành viên 1 |  |
+| Thành viên 2 |  |
+| Thành viên 3 |  |
+| Thành viên 4 |  |
+| Thành viên 5 |  |
+| Thành viên 6 |  |
 
 ## 📂 Cấu trúc dự án
 
 ```
-UDM08-TCP-Chat/
+ChatTCP/
 │
-├── TCPChat.Client/      # Ứng dụng Client
-├── TCPChat.Server/      # Ứng dụng Server
-├── TCPChat.Common/      # Thư viện dùng chung
-└── UDM08-TCP-Chat.sln   # Solution Visual Studio
+├── .gitignore                  # Danh sách file/thư mục được Git bỏ qua
+│
+├── ChatTCP.Client/             # Ứng dụng Client (WPF)
+│   ├── Dependencies/           # Thư viện và package sử dụng
+│   ├── App.xaml                # Điểm khởi tạo ứng dụng WPF
+│   ├── AssemblyInfo.cs         # Thông tin Assembly
+│   └── MainWindow.xaml         # Giao diện chính của Client
+│
+├── ChatTCP.Common/             # Thư viện dùng chung giữa Client và Server
+│   ├── Dependencies/
+│   └── Class1.cs               # Chứa các lớp/model dùng chung (sẽ mở rộng sau)
+│
+├── ChatTCP.Server/             # Ứng dụng Server Console
+│   ├── Dependencies/           # Thư viện và package sử dụng
+│   └── Program.cs              # Điểm khởi chạy Server
+│
+└── ChatTCP.sln                 # File Solution của Visual Studio
 ```
 
----
 
-## 🚀 Bắt đầu
-
-Clone dự án:
-
-```bash
-git clone <repository-link>
+Sau khi được mời, thành viên làm:
+git clone link-repository
 cd UDM08-TCP-Chat
-```
 
-Mở file **UDM08-TCP-Chat.sln** bằng **Visual Studio 2022**.
+Sau đó tạo branch riêng:
+VD:sever
+git checkout -b feature/tcp-server
 
-Chạy **Server** trước, sau đó chạy **Client** để kết nối.
+Làm code xong:
 
----
+git add .
+git commit -m "Add TCP Server"
+git push origin feature/tcp-server
+Sau đó tạo Pull Request
 
-## 🌿 Quy trình làm việc
 
-Tạo branch:
 
-```bash
-git checkout -b feature/ten-chuc-nang
-```
+🔄 Quy trình làm việc hằng ngày
 
-Sau khi hoàn thành:
+Trước khi bắt đầu code:
 
-```bash
+git checkout main
+git pull origin main
+git checkout ten-branch-cua-ban
+git merge main
+
+Sau khi code xong:
+
 git add .
 git commit -m "Mo ta chuc nang"
-git push origin feature/ten-chuc-nang
-```
+git push origin ten-branch-cua-ban
 
-Sau đó tạo **Pull Request** để merge vào `main`.
+Sau đó tạo Pull Request.
