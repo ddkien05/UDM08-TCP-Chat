@@ -10,8 +10,7 @@ public class Packet
     public string ReceiverId { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; } = DateTime.Now;
 
-    /// <summary>
     /// Chuỗi JSON chứa dữ liệu chi tiết (Payload) tương ứng với từng MessageType
-    /// </summary>
+
     public string PayloadJson { get; set; } = string.Empty;
 }
