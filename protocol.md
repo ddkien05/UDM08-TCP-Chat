@@ -36,11 +36,12 @@ Giao thức này đảm bảo việc truyền tải thông tin giữa Client và
 
 Mọi gói tin truyền qua mạng Socket bắt buộc phải được đóng khung (Framing) theo cấu trúc dưới đây để bên nhận có ranh giới phân tách dữ liệu rõ ràng:
 
-+----------------------- HEADER (8 Bytes) -----------------------+------ PAYLOAD (N Bytes) ------+
-|  Magic Bytes (2B)  |   MessageType / Opcode (2B) |  Length (4B)  |     JSON Data (UTF-8)         |
-+--------------------+-------------------------+---------------+-------------------------------+
-|    0xAA    0xBB    |      0x00    0x01       | 0x00 0x00 0x14| {"username": "abc", ... }     |
-+--------------------+-------------------------+---------------+-------------------------------+
+| Phân đoạn | Trường dữ liệu (Field) | Kích thước (Size) | Giá trị mẫu |
+| :--- | :--- | :--- | :--- |
+| **HEADER** | Magic Bytes | 2 Bytes | `0xAA 0xBB` |
+| **HEADER** | MessageType / Opcode | 2 Bytes | `0x00 0x01` |
+| **HEADER** | Length (Độ dài Payload) | 4 Bytes | `0x00 0x00 0x14` (Thập phân: 20 bytes) |
+| **PAYLOAD** | JSON Data | N Bytes | `{"username": "abc", ... }` |
 
 ### 3.1. Chi tiết phần Header (Cố định 8 Bytes)
 *   **Magic Bytes (2 Bytes - `ushort`)**: Giá trị cố định `0xAABB`. Dùng để kiểm tra tính hợp lệ của gói tin thuộc ứng dụng. Nếu nhận được byte đầu khác giá trị này, kết nối sẽ bị ngắt lập tức để bảo vệ hệ thống.
