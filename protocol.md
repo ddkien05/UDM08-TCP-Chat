@@ -43,7 +43,6 @@ Mọi gói tin truyền qua mạng Socket bắt buộc phải được đóng kh
 |    0xAA    0xBB    |      0x00    0x01       | 0x00 0x00 0x14| {"username": "abc", ... }     |
 +--------------------+-------------------------+---------------+-------------------------------+
 
-```markdown
 ### 3.1. Chi tiết phần Header (Cố định 8 Bytes)
 *   **Magic Bytes (2 Bytes - `ushort`)**: Giá trị cố định `0xAABB`. Dùng để kiểm tra tính hợp lệ của gói tin thuộc ứng dụng. Nếu nhận được byte đầu khác giá trị này, kết nối sẽ bị ngắt lập tức để bảo vệ hệ thống.
 *   **MessageType (2 Bytes - `ushort` / Enum)**: Mã Opcode xác định loại nghiệp vụ của gói tin để định tuyến xử lý nhanh trước khi giải mã JSON.
@@ -87,7 +86,6 @@ Mọi thuộc tính trong payload JSON được thống nhất viết theo chu�
   "username": "kien_dd05",
   "passwordHash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918" 
 }
-```
 
 ### 5.2. Phản hồi Đăng nhập (`LOGIN_RES` - Opcode `2`)
 *   **Hướng gửi**: Server → Client
