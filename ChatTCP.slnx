@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/Solution Items/">
-    <File Path=".gitignore" />
-  </Folder>
-  <Project Path="ChatTCP.Client/ChatTCP.Client.csproj" />
-  <Project Path="ChatTCP.Common/ChatTCP.Common.csproj" />
-  <Project Path="ChatTCP.Server/ChatTCP.Server.csproj" />
-</Solution>
