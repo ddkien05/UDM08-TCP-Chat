@@ -1,0 +1,9 @@
+<Application.Resources>
+    <!-- Application resource dictionary -->
+    <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="Theme/Colors.xaml"/>
+            <ResourceDictionary Source="Theme/Styles.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
