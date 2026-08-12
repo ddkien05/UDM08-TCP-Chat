@@ -1,9 +1,0 @@
-<ResourceDictionary xmls ="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-    <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
-    <SolidColorBrush x:Key="SecondaryColor" Color="#F3F4F6"/>
-    <SolidColorBrush x:Key="BackGround" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="TextColor_Primary" Color="#111827"/>
-    <SolidColorBrush x:Key="TextColor_Secondary" Color="#6B7280"/>
-    <SolidColorBrush x:Key="OnlineStatus" Color="#22C55E"/>
-    <SolidColorBrush x:Key="OfflineStatus" Color="#EF4444"/>
-<ResourceDictionary>
