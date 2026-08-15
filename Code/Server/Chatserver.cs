@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace ChatTCP.Sever
 {
-    
+
     public class ChatServer
     {
         private TcpListener _listener;
@@ -43,18 +43,19 @@ namespace ChatTCP.Sever
             {
                 try
                 {
-                    TcpClient newClient = _listener.AcceptTcpClient(); 
+                    TcpClient newClient = _listener.AcceptTcpClient();
 
                     string ip = newClient.Client.RemoteEndPoint.ToString();
-                    Console.WriteLine("co client moi ket noi: " + ip);
+                    Console.WriteLine("co client moi ket noi voi dia chi ip la: " + ip);
 
                     _clientManager.Add(newClient);
 
-               
+
                 }
                 catch (SocketException)
                 {
-                    break; 
+                    break;
+                }
             }
         }
     }
