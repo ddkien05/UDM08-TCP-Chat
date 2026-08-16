@@ -1,37 +1,20 @@
 ﻿<Window x:Class="Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:Views="clr-namespace:ChatTCP.Client.Views"
         Title="ChatTCP"
         Height="450"
         Width="800">
 
-	<Grid>
-		<StackPanel
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center">
-
-			<TextBlock
-                Text="ChatTCP"
-                FontSize="36"
-				FontFamily="{StaticResource AppFontFamily}"
-                FontWeight="Bold"
-                HorizontalAlignment="Center"/>
-
-			<TextBlock
-                Text="A simple TCP chat application"
-                FontSize="18"
-				FontFamily="{StaticResource AppFontFamily}"
-                HorizontalAlignment="Center"/>
-
-			<Button
-                Content="Connect"
-                FontSize="18"
-                Width="200"
-				FontFamily="{StaticResource AppFontFamily}"
-                Margin="0,20,0,0"
-                Padding="10"/>
-
-		</StackPanel>
-	</Grid>
+    <Grid>
+        <HeaderedContentControl
+            Header="ChatTCP"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            FontSize="24" 
+            
+            Margin="10,10,0,0"/>
+		<Views:ChatView/>
+    </Grid>
 
 </Window>

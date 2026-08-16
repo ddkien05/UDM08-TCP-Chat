@@ -1,0 +1,38 @@
+<ResourceDictionary 
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- Color Definitions -->
+    <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
+    <SolidColorBrush x:Key="SecondaryColor" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="BackGround" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TextColor_Primary" Color="#111827"/>
+    <SolidColorBrush x:Key="TextColor_Secondary" Color="#6B7280"/>
+    <SolidColorBrush x:Key="OnlineStatus" Color="#22C55E"/>
+    <SolidColorBrush x:Key="OfflineStatus" Color="#EF4444"/>
+    
+    <!--Typography -->
+    <FontFamily x:Key="AppFontFamily">Assets/Fonts/#Roboto</FontFamily>
+    <TextBlock
+        x:Key="HeaderMedium" 
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="16px"
+        FontWeight="Medium"
+        Foreground="{StaticResource TextColor_Primary}"/>
+    
+    <TextBlock
+        x:Key="BodyRegular" 
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="14px"
+        FontWeight="Normal"
+        Foreground="{StaticResource TextColor_Primary}"/>
+    
+    <TextBlock
+        x:Key="Caption" 
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="12px"
+        FontWeight="Normal"
+        Foreground="{StaticResource TextColor_Secondary}"/>
+    
+
+</ResourceDictionary>

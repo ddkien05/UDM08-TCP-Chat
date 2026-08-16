@@ -5,6 +5,11 @@
 
     <Application.Resources>
         <FontFamily x:Key="AppFontFamily">Assets/Fonts/#Roboto</FontFamily>
+        <TextBlock x:Key="HeadingMedium"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="14"
+            Foreground="{DynamicResource TextColor_Primary}"/>
+        
     </Application.Resources>
 
 </Application>
