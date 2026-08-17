@@ -1,0 +1,244 @@
+﻿<UserControl x:Class="Client.Views.ContactListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="#F3F4F6">
+
+        <!-- Chia 2 cột -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= Sidebar ================= -->
+
+        <Border Grid.Column="0"
+                Background="#1E1F22">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="60"/>
+                    <RowDefinition Height="60"/>
+                    <RowDefinition Height="60"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="60"/>
+                    <RowDefinition Height="60"/>
+                </Grid.RowDefinitions>
+
+                <!-- Avatar -->
+                <Border Width="50"
+                        Height="50"
+                        CornerRadius="25"
+                        Background="#666"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                    <TextBlock Text="👤"
+                               FontSize="24"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+
+                </Border>
+
+                <!-- Chat -->
+                <Button Grid.Row="1"
+                        Width="45"
+                        Height="45"
+                        Content="💬"
+                        FontSize="20"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"/>
+
+                <!-- Home -->
+                <Button Grid.Row="2"
+                        Width="45"
+                        Height="45"
+                        Content="🏠"
+                        FontSize="20"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"/>
+
+                <!-- Chụp màn hình -->
+                <Button Grid.Row="3"
+                        Width="45"
+                        Height="45"
+                        Content="📷"
+                        FontSize="20"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"/>
+
+                <!-- Gửi File -->
+                <Button Grid.Row="5"
+                        Width="45"
+                        Height="45"
+                        Content="📁"
+                        FontSize="20"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"/>
+
+                <!-- Cài đặt -->
+                <Button Grid.Row="6"
+                        Width="45"
+                        Height="45"
+                        Content="⚙"
+                        FontSize="20"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"/>
+
+            </Grid>
+
+        </Border>
+
+        <!-- ================= Danh sách chat ================= -->
+
+        <Grid Grid.Column="1">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="55"/>
+                <RowDefinition Height="55"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Background="#0A84FF">
+
+                <TextBlock Text="Danh sách chat"
+                           FontWeight="Bold"
+                           FontSize="22"
+                           Foreground="White"
+                           Margin="15,0"
+                           VerticalAlignment="Center"/>
+
+            </Border>
+
+            <!-- Test -->
+            <Button Grid.Row="1"
+                    Width="180"
+                    Height="35"
+                    Content="Thêm dữ liệu giả"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Click="btnFakeData_Click"/>
+
+            <!-- Nội dung -->
+
+            <Grid Grid.Row="2">
+
+                <!-- Chưa có dữ liệu -->
+
+                <StackPanel x:Name="EmptyPanel"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+
+                    <TextBlock Text="💬"
+                               FontSize="60"
+                               HorizontalAlignment="Center"/>
+
+                    <TextBlock Text="Chưa có cuộc trò chuyện"
+                               FontWeight="Bold"
+                               FontSize="18"
+                               Margin="0,10"/>
+
+                    <TextBlock Text="Nhấn nút để thêm dữ liệu giả."
+                               Foreground="Gray"/>
+
+                </StackPanel>
+
+                <!-- List -->
+
+                <ListBox x:Name="ChatList"
+                         Visibility="Collapsed"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                    <ListBox.ItemContainerStyle>
+
+                        <Style TargetType="ListBoxItem">
+
+                            <Setter Property="HorizontalContentAlignment"
+                                    Value="Stretch"/>
+
+                            <Setter Property="Padding"
+                                    Value="0"/>
+
+                            <Setter Property="Margin"
+                                    Value="0"/>
+
+                        </Style>
+
+                    </ListBox.ItemContainerStyle>
+
+                    <ListBox.ItemTemplate>
+
+                        <DataTemplate>
+
+                            <Border Margin="10,5"
+                                    Padding="10"
+                                    Background="White"
+                                    CornerRadius="10">
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+
+                                        <ColumnDefinition Width="60"/>
+
+                                        <ColumnDefinition Width="*"/>
+
+                                        <ColumnDefinition Width="70"/>
+
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Avatar -->
+
+                                    <Ellipse Width="45"
+                                             Height="45"
+                                             Fill="LightGray"/>
+
+                                    <!-- Nội dung -->
+
+                                    <StackPanel Grid.Column="1"
+                                                Margin="10,0">
+
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontWeight="Bold"
+                                                   FontSize="16"/>
+
+                                        <TextBlock Text="{Binding LastMessage}"
+                                                   Foreground="Gray"/>
+
+                                    </StackPanel>
+
+                                    <!-- Time -->
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding Time}"
+                                               HorizontalAlignment="Right"
+                                               Foreground="Gray"/>
+
+                                </Grid>
+
+                            </Border>
+
+                        </DataTemplate>
+
+                    </ListBox.ItemTemplate>
+
+                </ListBox>
+
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>
