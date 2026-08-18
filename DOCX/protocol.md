@@ -1,5 +1,8 @@
 ## 1. Cấu trúc Khung dữ liệu (Frame Format)
 
+**Định nghĩa Message Framing:**
+Quy định cấu trúc phân định ranh giới cho từng gói tin riêng biệt khi truyền qua luồng dữ liệu liên tục (Byte Stream) của TCP giúp ứng dụng xác định chính xác điểm bắt đầu/kết thúc của mỗi thông điệp, giải quyết triệt để hiện tượng Dính gói và Xé gói.
+
 Vì TCP truyền theo dạng byte stream, gói tin ứng dụng sẽ được đóng gói theo dạng Length-Prefixed Frame để chống dính/xé gói tin:
 
 | Thành phần | Kích thước | Mô tả |
@@ -28,6 +31,9 @@ Tất cả gói tin gửi qua TCP đều tuân theo cấu trúc JSON gốc:
 ---
 
 ## 3. Danh sách Mã gói tin (Packet Types)
+
+**Định nghĩa Message Type:**
+Giao thức phải chỉ định có những loại thông điệp nào có thể được gửi và nhận. Hai loại chính là Request message và Response message.
 
 | Mã Type | Chiều truyền | Mô tả chức năng |
 | :--- | :--- | :--- |
