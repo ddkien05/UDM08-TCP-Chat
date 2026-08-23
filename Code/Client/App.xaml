@@ -4,12 +4,18 @@
              StartupUri="MainWindow.xaml">
 
     <Application.Resources>
-        <FontFamily x:Key="AppFontFamily">Assets/Fonts/#Roboto</FontFamily>
-        <TextBlock x:Key="HeadingMedium"
-            FontFamily="{StaticResource AppFontFamily}"
-            FontSize="14"
-            Foreground="{DynamicResource TextColor_Primary}"/>
-        
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Assets/Theme/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="HeadingMedium" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor_Primary}"/>
+            </Style>
+
+        </ResourceDictionary>
     </Application.Resources>
 
 </Application>
