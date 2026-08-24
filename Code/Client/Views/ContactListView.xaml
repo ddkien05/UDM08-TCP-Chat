@@ -13,7 +13,7 @@
         <!-- ================= Sidebar ================= -->
 
         <Border Grid.Column="0"
-                Background="#1E1F22">
+                Background="#0A84FF">
 
             <Grid>
 
@@ -118,14 +118,15 @@
 
             </Border>
 
-            <!-- Test -->
-            <Button Grid.Row="1"
+            <!-- Demmo GUI -->
+			<!--Button Grid.Row="1"
                     Width="180"
                     Height="35"
                     Content="Thêm dữ liệu giả"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Click="btnFakeData_Click"/>
+					!-->
 
             <!-- Nội dung -->
 
@@ -146,8 +147,7 @@
                                FontSize="18"
                                Margin="0,10"/>
 
-                    <TextBlock Text="Nhấn nút để thêm dữ liệu giả."
-                               Foreground="Gray"/>
+                    
 
                 </StackPanel>
 
