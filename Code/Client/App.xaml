@@ -4,7 +4,17 @@
              StartupUri="MainWindow.xaml">
 
     <Application.Resources>
-        <FontFamily x:Key="AppFontFamily">Assets/Fonts/#Roboto</FontFamily>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+
+                <ResourceDictionary Source="Assets/Theme/Styles.xaml"/>
+
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+
     </Application.Resources>
 
 </Application>
