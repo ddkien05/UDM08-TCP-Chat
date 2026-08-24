@@ -3,48 +3,83 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
-namespace Common;
+namespace ChatTCP.Common.Protocol;
 
 public static class MessageProtocol
 {
-    public static async Task SendPacketAsync<T>(NetworkStream ns, T p)
+    /// <summary>
+    /// Đóng gói một gói tin và gửi qua NetworkStream.
+    /// </summary>
+    public static async Task SendPacketAsync<T>(NetworkStream networkStream, T packet)
     {
-        if (ns == null || !ns.CanWrite) return;
+        if (networkStream == null || !networkStream.CanWrite) return;
 
-        byte[] buf = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(p));
-        byte[] h = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(h, buf.Length);
-
-        await ns.WriteAsync(h.AsMemory(0, 4));
-        await ns.WriteAsync(buf.AsMemory(0, buf.Length));
-        await ns.FlushAsync();
-    }
-
-    public static async Task<string?> ReceiveRawJsonAsync(NetworkStream ns)
-    {
-        if (ns == null || !ns.CanRead) return null;
-
-        byte[] h = new byte[4];
-        if (await ReadAsync(ns, h, 4) < 4) return null;
-
-        int len = BinaryPrimitives.ReadInt32BigEndian(h);
-        if (len <= 0 || len > 10 * 1024 * 1024) return null;
-
-        byte[] buf = new byte[len];
-        if (await ReadAsync(ns, buf, len) < len) return null;
-
-        return Encoding.UTF8.GetString(buf);
-    }
-
-    private static async Task<int> ReadAsync(NetworkStream ns, byte[] buf, int count)
-    {
-        int sum = 0;
-        while (sum < count)
+        try
         {
-            int r = await ns.ReadAsync(buf, sum, count - sum);
-            if (r == 0) break;
-            sum += r;
+            // Chuyển đổi gói tin thành chuỗi JSON và sau đó sang mảng byte
+            string jsonString = JsonSerializer.Serialize(packet);
+            byte[] payloadBytes = Encoding.UTF8.GetBytes(jsonString);
+
+            // Tạo header 4 byte chứa độ dài của payload
+            byte[] lengthHeader = new byte[4];
+            BinaryPrimitives.WriteInt32BigEndian(lengthHeader, payloadBytes.Length);
+
+            // Gửi header và payload qua NetworkStream
+            await networkStream.WriteAsync(lengthHeader.AsMemory(0, 4));
+            await networkStream.WriteAsync(payloadBytes.AsMemory(0, payloadBytes.Length));
+            await networkStream.FlushAsync();
         }
-        return sum;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Lỗi gửi gói tin: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Đọc một gói tin từ NetworkStream và trả về chuỗi JSON thô.
+    /// </summary>
+    public static async Task<string?> ReceiveRawJsonAsync(NetworkStream networkStream)
+    {
+        if (networkStream == null || !networkStream.CanRead) return null;
+
+        try
+        {
+            // Đọc header 4 byte để xác định độ dài của payload
+            byte[] lengthHeader = new byte[4];
+            int headerBytesRead = await ReadExactBytesAsync(networkStream, lengthHeader, 4);
+            if (headerBytesRead < 4) return null;
+
+            // Chuyển đổi header từ big-endian sang int
+            int payloadLength = BinaryPrimitives.ReadInt32BigEndian(lengthHeader);
+            if (payloadLength <= 0 || payloadLength > 10 * 1024 * 1024) return null;
+
+            // Đọc payload dựa trên độ dài đã xác định
+            byte[] payloadBytes = new byte[payloadLength];
+            int dataBytesRead = await ReadExactBytesAsync(networkStream, payloadBytes, payloadLength);
+            if (dataBytesRead < payloadLength) return null;
+
+            // Chuyển đổi payload từ mảng byte sang chuỗi JSON
+            return Encoding.UTF8.GetString(payloadBytes);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Lỗi nhận gói tin: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Đọc chính xác số byte từ NetworkStream.
+    /// </summary>
+    private static async Task<int> ReadExactBytesAsync(NetworkStream networkStream, byte[] buffer, int bytesToRead)
+    {
+        int totalBytesRead = 0;
+        while (totalBytesRead < bytesToRead)
+        {
+            int bytesRead = await networkStream.ReadAsync(buffer, totalBytesRead, bytesToRead - totalBytesRead);
+            if (bytesRead == 0) break;
+            totalBytesRead += bytesRead;
+        }
+        return totalBytesRead;
     }
 }

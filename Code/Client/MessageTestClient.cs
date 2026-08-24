@@ -1,11 +1,12 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using Common;
+using ChatTCP.Common.Models;
+using ChatTCP.Common.Protocol;
 
-namespace Client;
+namespace ChatTCP.Client.Networking;
 
-class Program
+class MessageTestClient
 {
     static async Task Main()
     {
@@ -13,17 +14,17 @@ class Program
         Console.InputEncoding = Encoding.UTF8;
 
         Console.Write("UserID: ");
-        string uid = Console.ReadLine()?.Trim() ?? "usr_101";
+        string userId = Console.ReadLine()?.Trim() ?? "usr_101";
 
         Console.Write("Name: ");
         string name = Console.ReadLine()?.Trim() ?? "User";
 
-        Console.Title = $"CLIENT: {name} ({uid})";
+        Console.Title = $"CLIENT: {name} ({userId})";
 
-        var cli = new TcpClient();
+        var tcpClient = new TcpClient();
         try
         {
-            await cli.ConnectAsync("127.0.0.1", 9000);
+            await tcpClient.ConnectAsync("127.0.0.1", 9000);
             Console.WriteLine("Success!\n");
         }
         catch
@@ -33,17 +34,17 @@ class Program
             return;
         }
 
-        var ns = cli.GetStream();
+        var networkStream = tcpClient.GetStream();
 
-        // 1. Gui AUTH_REQ
-        var req = new Packet<object>
+        // Gui AUTH_REQ
+        var authReq = new Packet<object>
         {
             Type = "AUTH_REQ",
             Seq = 1,
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            Data = new { username = uid, display_name = name }
+            Data = new { username = userId, display_name = name }
         };
-        await MessageProtocol.SendPacketAsync(ns, req);
+        await MessageProtocol.SendPacketAsync(networkStream, authReq);
 
         _ = Task.Run(async () =>
         {
@@ -51,20 +52,20 @@ class Program
             {
                 try
                 {
-                    string? raw = await MessageProtocol.ReceiveRawJsonAsync(ns);
+                    string? raw = await MessageProtocol.ReceiveRawJsonAsync(networkStream);
                     if (raw == null) break;
 
-                    var basePkt = JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
-                    if (basePkt?.Type == "CHAT_MSG")
+                    var basePacket = JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
+                    if (basePacket?.Type == "CHAT_MSG")
                     {
-                        var chatPkt = JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
-                        var s = chatPkt?.Data.Sender;
-                        Console.WriteLine($"\n📩 [{s?.DisplayName}]: {chatPkt?.Data.Content}");
+                        var chatPacket = JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
+                        var sender = chatPacket?.Data.Sender;
+                        Console.WriteLine($"\n📩 [{sender?.DisplayName}]: {chatPacket?.Data.Content}");
                     }
-                    else if (basePkt?.Type == "ERROR")
+                    else if (basePacket?.Type == "ERROR")
                     {
-                        var err = JsonSerializer.Deserialize<Packet<ErrorData>>(raw);
-                        Console.WriteLine($"[ERROR]: {err?.Data.Message}");
+                        var errorPacket = JsonSerializer.Deserialize<Packet<ErrorData>>(raw);
+                        Console.WriteLine($"\n⚠️: {errorPacket?.Data.Message}");
                     }
                 }
                 catch { break; }
@@ -82,7 +83,7 @@ class Program
             string? txt = Console.ReadLine();
             if (string.IsNullOrEmpty(txt)) continue;
 
-            var pkt = new Packet<ChatMessageData>
+            var chatPacket = new Packet<ChatMessageData>
             {
                 Type = "CHAT_MSG",
                 Seq = 100,
@@ -92,12 +93,12 @@ class Program
                     MsgId = Guid.NewGuid().ToString("N"),
                     TargetType = "PRIVATE",
                     TargetId = to,
-                    Sender = new() { UserId = uid, DisplayName = name },
+                    Sender = new() { UserId = userId, DisplayName = name },
                     Content = txt
                 }
             };
 
-            await MessageProtocol.SendPacketAsync(ns, pkt);
+            await MessageProtocol.SendPacketAsync(networkStream, chatPacket);
             Console.WriteLine("-> Sent!");
         }
     }

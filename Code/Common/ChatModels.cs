@@ -1,7 +1,10 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Common;
+namespace ChatTCP.Common.Models;
 
+/// <summary>
+/// Khung gói tin dùng để truyền dữ liệu giữa client và server.
+/// </summary>
 public class Packet<T>
 {
     [JsonPropertyName("type")] public string Type { get; set; } = string.Empty;
@@ -10,6 +13,9 @@ public class Packet<T>
     [JsonPropertyName("data")] public T Data { get; set; } = default!;
 }
 
+/// <summary>
+/// Thông tin người gửi trong một tin nhắn.
+/// </summary>
 public class SenderInfo
 {
     [JsonPropertyName("user_id")] public string UserId { get; set; } = string.Empty;
@@ -17,6 +23,9 @@ public class SenderInfo
     [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
 }
 
+/// <summary>
+/// Thông tin về tin nhắn mà người dùng đang trả lời.
+/// </summary>
 public class ReplyInfo
 {
     [JsonPropertyName("msg_id")] public string MsgId { get; set; } = string.Empty;
@@ -24,6 +33,9 @@ public class ReplyInfo
     [JsonPropertyName("content_snippet")] public string ContentSnippet { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Dữ liệu của một tin nhắn chat.
+/// </summary>
 public class ChatMessageData
 {
     [JsonPropertyName("msg_id")] public string MsgId { get; set; } = string.Empty;
@@ -36,6 +48,9 @@ public class ChatMessageData
     [JsonPropertyName("forward_from_name")] public string? ForwardFromName { get; set; }
 }
 
+/// <summary>
+/// Dữ liệu lỗi trả về từ server.
+/// </summary>
 public class ErrorData
 {
     [JsonPropertyName("code")] public int Code { get; set; }

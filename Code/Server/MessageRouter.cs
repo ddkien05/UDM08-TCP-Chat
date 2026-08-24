@@ -1,34 +1,50 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
-using Common;
+using ChatTCP.Common.Models;
+using ChatTCP.Common.Protocol;
 
-namespace Server;
+namespace ChatTCP.Server.Services;
 
-public class MessageRouter(ConcurrentDictionary<string, NetworkStream> map)
+public class MessageRouter(ConcurrentDictionary<string, NetworkStream> clientMap)
 {
-    public async Task RouteChatMessageAsync(Packet<ChatMessageData> pkt, NetworkStream ns)
+    /// <summary>
+    /// Định tuyến tin nhắn chat đến người nhận dựa trên loại và ID của người nhận.
+    /// </summary>
+   public async Task RouteChatMessageAsync(Packet<ChatMessageData> chatPacket, NetworkStream senderStream)
     {
-        var d = pkt.Data;
-
-        if (d.TargetType == "PRIVATE")
+        try
         {
-            if (map.TryGetValue(d.TargetId, out var ts))
+            var messageData = chatPacket.Data;
+            if (messageData.TargetType == "PRIVATE")
             {
-                Console.WriteLine($"[ROUTER] {d.Sender.UserId} -> {d.TargetId}");
-                await MessageProtocol.SendPacketAsync(ts, pkt);
-            }
-            else
-            {
-                Console.WriteLine($"[ROUTER] {d.TargetId} Offline");
-                var err = new Packet<ErrorData>
+                if (clientMap.TryGetValue(messageData.TargetId, out var targetStream))
                 {
-                    Type = "ERROR",
-                    Seq = pkt.Seq,
-                    Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                    Data = new() { Code = 404, Message = $"User '{d.TargetId}' Offline." }
-                };
-                await MessageProtocol.SendPacketAsync(ns, err);
+                    Console.WriteLine($"[ROUTER] Message forwarded: {messageData.Sender.UserId} -> {messageData.TargetId}");
+                    await MessageProtocol.SendPacketAsync(targetStream, chatPacket);
+                }
+                else
+                {
+                    Console.WriteLine($"[ROUTER] User {messageData.TargetId} is Offline");
+
+                    var errorPacket = new Packet<ErrorData>
+                    {
+                        Type = "ERROR",
+                        Seq = chatPacket.Seq,
+                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                        Data = new ErrorData
+                        {
+                            Code = 404,
+                            Message = $"User {messageData.TargetId} is Offline or does not exist."
+                        }
+                    };
+
+                    await MessageProtocol.SendPacketAsync(senderStream, errorPacket);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Error routing message: {ex.Message}");
         }
     }
 }
