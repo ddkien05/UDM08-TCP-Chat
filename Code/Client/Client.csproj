@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
- feature/server-databasee
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
@@ -20,6 +19,6 @@
   </PropertyGroup>
   <ItemGroup>
 	<Resource Include="Assets\Fonts\Roboto-VariableFont_wdth,wght.ttf" />
-  </ItemGroup> dev
+  </ItemGroup>
 
 </Project>
