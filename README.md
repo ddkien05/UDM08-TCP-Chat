@@ -51,12 +51,20 @@
 
 ```
 UDM08-TCP-Chat/
-│
-├── TCPChat.Client/      # Ứng dụng Client
-├── TCPChat.Server/      # Ứng dụng Server
-├── TCPChat.Common/      # Thư viện dùng chung
-└── UDM08-TCP-Chat.sln   # Solution Visual Studio
-```
+└── Code/
+    ├── Sever/                      
+    │   ├── Program.cs              
+    │   ├── ChatServer.cs            
+    │   ├── ClientManager.cs        
+    │   └── Data/
+    │       ├── Schema.sql            
+    │       ├── DbConnectionFactory.cs 
+    │
+    ├── Client/                     
+    │   └── Program.cs
+    │
+    └── Common/                     ← 
+        └── Program.cs
 
 ---
 
