@@ -4,6 +4,20 @@
              StartupUri="MainWindow.xaml">
 
     <Application.Resources>
+<<<<<<< HEAD
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Assets/Theme/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="HeadingMedium" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor_Primary}"/>
+            </Style>
+
+        </ResourceDictionary>
+=======
 
         <ResourceDictionary>
 
@@ -15,6 +29,7 @@
 
         </ResourceDictionary>
 
+>>>>>>> 144447546b1ddec744363e7aaafcffef514b0bb3
     </Application.Resources>
 
 </Application>

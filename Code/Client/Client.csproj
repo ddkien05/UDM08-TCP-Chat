@@ -19,6 +19,10 @@
   </PropertyGroup>
   <ItemGroup>
 	<Resource Include="Assets\Fonts\Roboto-VariableFont_wdth,wght.ttf" />
+<<<<<<< HEAD
+  </ItemGroup> 
+=======
   </ItemGroup>
 
+>>>>>>> 144447546b1ddec744363e7aaafcffef514b0bb3
 </Project>
