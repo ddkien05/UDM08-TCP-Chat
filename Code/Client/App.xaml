@@ -4,6 +4,7 @@
              StartupUri="MainWindow.xaml">
 
     <Application.Resources>
+<<<<<<< HEAD
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Assets/Theme/Styles.xaml"/>
@@ -16,6 +17,19 @@
             </Style>
 
         </ResourceDictionary>
+=======
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+
+                <ResourceDictionary Source="Assets/Theme/Styles.xaml"/>
+
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+
+>>>>>>> 144447546b1ddec744363e7aaafcffef514b0bb3
     </Application.Resources>
 
 </Application>

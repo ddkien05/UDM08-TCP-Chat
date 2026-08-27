@@ -1,20 +1,13 @@
 ﻿<Window x:Class="Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:Views="clr-namespace:ChatTCP.Client.Views"
         Title="ChatTCP"
-        Height="450"
-        Width="800">
+        Height="650"
+        Width="900"
+        WindowStartupLocation="CenterScreen">
 
     <Grid>
-        <HeaderedContentControl
-            Header="ChatTCP"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            FontSize="24" 
-            
-            Margin="10,10,0,0"/>
-		<Views:ChatView/>
+        <ContentControl x:Name="MainContent"/>
     </Grid>
 
 </Window>
