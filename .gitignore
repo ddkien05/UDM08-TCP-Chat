@@ -1,0 +1,16 @@
+# .gitignore cơ bản cho ChatTCP (C#/.NET + Visual Studio)
+
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+
+# Database (không đẩy dữ liệu test cá nhân lên chung)
+*.db
+
+# System files
+.DS_Store
+Thumbs.db
