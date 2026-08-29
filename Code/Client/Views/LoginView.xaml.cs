@@ -48,7 +48,7 @@ namespace Client.Views
 
                 bool connected = await _socketService.ConnectAsync(
                     "127.0.0.1",
-                    8888
+                    9000
                 );
 
                 if (!connected)
