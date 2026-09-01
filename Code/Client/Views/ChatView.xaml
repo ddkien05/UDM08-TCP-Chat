@@ -1,0 +1,100 @@
+﻿<UserControl x:Class="ChatTCP.Client.Views.ChatView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="500"
+             Background="{StaticResource BackgroundBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header: tên người/nhóm đang chat + trạng thái online -->
+        <Border Grid.Row="0" Background="{StaticResource BackgroundBrush}"
+                BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                <TextBlock Text="An Nguyễn" Style="{StaticResource HeaderMedium}"/>
+                <Ellipse Width="8" Height="8" Fill="{StaticResource OnlineStatus}"
+                         Margin="8,0,0,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Đang hoạt động" Style="{StaticResource Caption}"
+                           Margin="4,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Khung tin nhắn -->
+        <ScrollViewer Grid.Row="1" Padding="16" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Tin nhắn của người khác -->
+                <Border Background="{StaticResource SecondaryBubbleBrush}"
+                        CornerRadius="12" Padding="12,8" Margin="0,4"
+                        HorizontalAlignment="Left" MaxWidth="300">
+                    <TextBlock Text="Chào Phước, khỏe không?" TextWrapping="Wrap"
+                               Style="{StaticResource BodyRegular}"/>
+                </Border>
+                <TextBlock Text="10:15" Style="{StaticResource Caption}"
+                           HorizontalAlignment="Left" Margin="4,0,0,8"/>
+
+                <!-- Tin nhắn của mình -->
+                <Border Background="{StaticResource PrimaryBrush}"
+                        CornerRadius="12" Padding="12,8" Margin="0,4"
+                        HorizontalAlignment="Right" MaxWidth="300">
+                    <TextBlock Text="Khỏe, cảm ơn bạn! 👋" TextWrapping="Wrap"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="14" Foreground="White"/>
+                </Border>
+                <TextBlock Text="10:16" Style="{StaticResource Caption}"
+                           HorizontalAlignment="Right" Margin="0,0,4,8"/>
+
+                <!-- Tin nhắn dạng Reply  -->
+                <Border Background="{StaticResource SecondaryBubbleBrush}"
+                        CornerRadius="12" Padding="12,8" Margin="0,4"
+                        HorizontalAlignment="Left" MaxWidth="300">
+                    <StackPanel>
+                        <Border Background="{StaticResource BackgroundBrush}"
+                                BorderBrush="{StaticResource BorderColor}" BorderThickness="2,0,0,0"
+                                Padding="8,4" Margin="0,0,0,6">
+                            <TextBlock Text="Khỏe, cảm ơn bạn! 👋" Style="{StaticResource Caption}"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+                        <TextBlock Text="Vậy cuối tuần đi cà phê không?" TextWrapping="Wrap"
+                                   Style="{StaticResource BodyRegular}"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="10:20" Style="{StaticResource Caption}"
+                           HorizontalAlignment="Left" Margin="4,0,0,8"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Thanh nhập tin nhắn -->
+        <Grid Grid.Row="2" Margin="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="😀" x:Name="EmojiButton"
+                    Width="40" Height="48" Margin="0,0,8,0"
+                    Click="EmojiButton_Click"/>
+
+            <TextBox Grid.Column="1" x:Name="MessageInputBox"
+                     VerticalContentAlignment="Center" Padding="12,8"
+                     Height="48"
+                     FontFamily="{StaticResource AppFontFamily}"
+                     FontSize="14"/>
+
+            <Button Grid.Column="2" Content="Gửi" x:Name="SendButton"
+                    Width="70" Height="48" Margin="8,0,0,0"
+                    Background="{StaticResource PrimaryBrush}" Foreground="White"
+                    Click="SendButton_Click"/>
+        </Grid>
+
+    </Grid>
+</UserControl>
