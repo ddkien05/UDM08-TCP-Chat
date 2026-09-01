@@ -1,10 +1,125 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ChatTCP.Sever.Data;
+using Microsoft.Data.Sqlite;
+using System;
 
-namespace Server.Data
+namespace ChatTCP.Server.Data
 {
-    internal class Userrepository
+    
+    public class UserRepository : IUserRepository
     {
+        
+        public UserModel GetByUsername(string username)
+        {
+            try
+            {
+                using var conn = DbConnectionFactory.Create();
+                using var cmd = new SqliteCommand(
+                    @"SELECT UserId, Username, PasswordHash, DisplayName, AvatarUrl
+                      FROM Users WHERE Username = @username", conn);
+                cmd.Parameters.AddWithValue("@username", username);
+
+                using var reader = cmd.ExecuteReader();
+                if (!reader.Read()) return null;
+
+                return MapReaderToUser(reader);
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine("[UserRepository] Lỗi GetByUsername: " + ex.Message);
+                return null; 
+            }
+        }
+
+     
+        public UserModel GetById(int userId)
+        {
+            try
+            {
+                using var conn = DbConnectionFactory.Create();
+                using var cmd = new SqliteCommand(
+                    @"SELECT UserId, Username, PasswordHash, DisplayName, AvatarUrl
+                      FROM Users WHERE UserId = @id", conn);
+                cmd.Parameters.AddWithValue("@id", userId);
+
+                using var reader = cmd.ExecuteReader();
+                if (!reader.Read()) return null;
+
+                return MapReaderToUser(reader);
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine("[UserRepository] Lỗi GetById: " + ex.Message);
+                return null;
+            }
+        }
+
+        
+        public int CreateUser(string username, string passwordHash, string displayName)
+        {
+            try
+            {
+                using var conn = DbConnectionFactory.Create();
+                using var cmd = new SqliteCommand(
+                    @"INSERT INTO Users (Username, PasswordHash, DisplayName)
+                      VALUES (@username, @hash, @displayName);
+                      SELECT last_insert_rowid();", conn);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@hash", passwordHash);
+                cmd.Parameters.AddWithValue("@displayName", displayName);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine("[UserRepository] Lỗi CreateUser: " + ex.Message);
+                throw; 
+            }
+        }
+
+      
+        public void UpdateAvatar(int userId, string avatarUrl)
+        {
+            try
+            {
+                using var conn = DbConnectionFactory.Create();
+                using var cmd = new SqliteCommand(
+                    "UPDATE Users SET AvatarUrl = @avatarUrl WHERE UserId = @userId", conn);
+                cmd.Parameters.AddWithValue("@avatarUrl", avatarUrl);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.ExecuteNonQuery();
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine("[UserRepository] Lỗi UpdateAvatar: " + ex.Message);
+            }
+        }
+
+      
+        public void SetOnlineStatus(int userId, bool isOnline)
+        {
+            try
+            {
+                using var conn = DbConnectionFactory.Create();
+                using var cmd = new SqliteCommand(
+                    "UPDATE Users SET IsOnline = @online WHERE UserId = @userId", conn);
+                cmd.Parameters.AddWithValue("@online", isOnline ? 1 : 0);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.ExecuteNonQuery();
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine("[UserRepository] Lỗi SetOnlineStatus: " + ex.Message);
+            }
+        }
+
+        
+        private static UserModel MapReaderToUser(SqliteDataReader reader) => new UserModel
+        {
+            UserId = reader.GetInt32(0),
+            Username = reader.GetString(1),
+            PasswordHash = reader.GetString(2),
+            DisplayName = reader.GetString(3),
+            AvatarUrl = reader.IsDBNull(4) ? null : reader.GetString(4)
+        };
     }
 }
