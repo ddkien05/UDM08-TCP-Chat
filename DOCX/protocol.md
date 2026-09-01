@@ -3,7 +3,7 @@
 * **Cổng mặc định:** 8888
 * **Địa chỉ IP mặc định:** 127.0.0.1
 * **Định dạng dữ liệu:** JSON (JavaScript Object Notation)
-* **Mã hóa ký tự:** UTF-8 (Hỗ trợ Tiếng Việt và Emoji)
+* **Mã hóa ký tự:** UTF-8 (Hỗ trợ Tiếng Việt có dấu và Emoji)
 
 
 ## 2. Cấu trúc Khung dữ liệu (Frame Format)
