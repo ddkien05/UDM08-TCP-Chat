@@ -1,14 +1,13 @@
-﻿using ChatTCP.Sever.Data;
-using Microsoft.Data.Sqlite;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Microsoft.Data.Sqlite;
 
 namespace ChatTCP.Server.Data
 {
-   
+    ///Triển khai IConversationRepository bằng SQLite.
     public class ConversationRepository : IConversationRepository
     {
-        
+        /// Tạo hội thoại mới (1-1 hoặc nhóm), tự thêm các thành viên ban đầu trong 1 transaction. Trả về ConversationId
         public int CreateConversation(bool isGroup, string name, IEnumerable<int> memberUserIds)
         {
             using var conn = DbConnectionFactory.Create();
@@ -43,12 +42,12 @@ namespace ChatTCP.Server.Data
             catch (SqliteException ex)
             {
                 Console.WriteLine("[ConversationRepository] Lỗi CreateConversation, đang rollback: " + ex.Message);
-                tx.Rollback(); 
+                tx.Rollback(); // đảm bảo không lưu nửa vời (có Conversation mà thiếu Member)
                 throw;
             }
         }
 
-        /// Thêm 1 thành viên vào hội thoại đã có sẵn.
+        ///Thêm 1 thành viên vào hội thoại đã có sẵn.
         public void AddMember(int conversationId, int userId)
         {
             try
@@ -68,7 +67,7 @@ namespace ChatTCP.Server.Data
             }
         }
 
-        /// Lấy danh sách UserId là thành viên của 1 cuộc hội thoại. Trả về danh sách rỗng nếu có lỗi.
+        ///Lấy danh sách UserId là thành viên của 1 cuộc hội thoại. Trả về danh sách rỗng nếu có lỗi.
         public List<int> GetMemberUserIds(int conversationId)
         {
             var result = new List<int>();

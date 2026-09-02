@@ -1,13 +1,12 @@
-﻿using ChatTCP.Sever.Data;
+﻿using System;
 using Microsoft.Data.Sqlite;
-using System;
 
 namespace ChatTCP.Server.Data
 {
-    
+    /// Triển khai IUserRepository bằng SQLite.
     public class UserRepository : IUserRepository
     {
-        
+        ///Tìm user theo Username. Trả về null nếu không tồn tại hoặc có lỗi truy vấn
         public UserModel GetByUsername(string username)
         {
             try
@@ -26,11 +25,11 @@ namespace ChatTCP.Server.Data
             catch (SqliteException ex)
             {
                 Console.WriteLine("[UserRepository] Lỗi GetByUsername: " + ex.Message);
-                return null; 
+                return null; // không để lỗi Database làm sập server, chỉ báo không tìm thấy
             }
         }
 
-     
+        /// Tìm user theo UserId. Trả về null nếu không tồn tại hoặc có lỗi truy vấn
         public UserModel GetById(int userId)
         {
             try
@@ -53,7 +52,7 @@ namespace ChatTCP.Server.Data
             }
         }
 
-        
+        /// Tạo user mới, trả về UserId vừa tạo ném lại lỗi cho tầng gọi xử lý nếu thất bại
         public int CreateUser(string username, string passwordHash, string displayName)
         {
             try
@@ -72,11 +71,11 @@ namespace ChatTCP.Server.Data
             catch (SqliteException ex)
             {
                 Console.WriteLine("[UserRepository] Lỗi CreateUser: " + ex.Message);
-                throw; 
+                throw; // tầng gọi sẽ bắt lại để xử lý vd báo FAIL về client, không để sập server
             }
         }
 
-      
+        ///Cập nhật đường dẫn avatar của 1 user
         public void UpdateAvatar(int userId, string avatarUrl)
         {
             try
@@ -94,7 +93,7 @@ namespace ChatTCP.Server.Data
             }
         }
 
-      
+        ///Đánh dấu 1 user đang online hay offline
         public void SetOnlineStatus(int userId, bool isOnline)
         {
             try
@@ -112,7 +111,7 @@ namespace ChatTCP.Server.Data
             }
         }
 
-        
+        ///Gom logic đọc 1 dòng SqliteDataReader thành UserModel, tránh lặp code giữa GetByUsername/GetById.
         private static UserModel MapReaderToUser(SqliteDataReader reader) => new UserModel
         {
             UserId = reader.GetInt32(0),

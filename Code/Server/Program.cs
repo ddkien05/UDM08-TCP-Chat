@@ -1,8 +1,10 @@
-﻿using Server.Networking;
+﻿using ChatTCP.Server.Networking;
+using ChatTCP.Server.Services;
+using Server.Networking;
 using Server.Services;
 using System;
 
-namespace ChatTCP.Sever
+namespace ChatTCP.Server
 {
     class Program
     {
@@ -13,7 +15,7 @@ namespace ChatTCP.Sever
 
             server.Start();
 
-            Console.WriteLine("Nhan enter de dung sever...");
+            Console.WriteLine("Nhấn Enter để dừng server...");
             Console.ReadLine();
 
             server.Stop();

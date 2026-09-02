@@ -1,4 +1,3 @@
-
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE Users (
@@ -8,17 +7,15 @@ CREATE TABLE Users (
     DisplayName  TEXT NOT NULL,
     AvatarUrl    TEXT,
     CreatedAt    TEXT NOT NULL DEFAULT (datetime('now')),
-    IsOnline     INTEGER NOT NULL DEFAULT 0     
+    IsOnline     INTEGER NOT NULL DEFAULT 0
 );
-
 
 CREATE TABLE Conversations (
     ConversationId INTEGER PRIMARY KEY AUTOINCREMENT,
     IsGroup        INTEGER NOT NULL DEFAULT 0,
-    Name           TEXT,                       
+    Name           TEXT,
     CreatedAt      TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
 
 CREATE TABLE ConversationMembers (
     ConversationId INTEGER NOT NULL REFERENCES Conversations(ConversationId),
@@ -31,7 +28,7 @@ CREATE TABLE Messages (
     MessageId              INTEGER PRIMARY KEY AUTOINCREMENT,
     ConversationId         INTEGER NOT NULL REFERENCES Conversations(ConversationId),
     SenderId               INTEGER NOT NULL REFERENCES Users(UserId),
-    Content                TEXT NOT NULL,         
+    Content                TEXT NOT NULL,
     ReplyToMessageId       INTEGER REFERENCES Messages(MessageId),
     ForwardedFromMessageId INTEGER REFERENCES Messages(MessageId),
     SentAt                 TEXT NOT NULL DEFAULT (datetime('now'))

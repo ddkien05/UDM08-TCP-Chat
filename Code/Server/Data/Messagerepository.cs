@@ -1,14 +1,13 @@
-﻿using ChatTCP.Sever.Data;
-using Microsoft.Data.Sqlite;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Microsoft.Data.Sqlite;
 
 namespace ChatTCP.Server.Data
 {
-   
+    ///Triển khai IMessageRepository bằng SQLite
     public class MessageRepository : IMessageRepository
     {
-        
+        ///Lưu 1 tin nhắn mới, trả về MessageId vừa tạo. Ném lại lỗi cho tầng gọi xử lý nếu thất bại.
         public int InsertMessage(int conversationId, int senderId, string content,
                                   int? replyToMessageId = null, int? forwardedFromMessageId = null)
         {
@@ -36,7 +35,7 @@ namespace ChatTCP.Server.Data
             }
         }
 
-       
+        ///Forward tin nhắn gốc sang 1 cuộc hội thoại khác, trả về MessageId mới.
         public int ForwardMessage(int sourceMessageId, int targetConversationId, int forwardedByUserId)
         {
             MessageModel original = GetById(sourceMessageId);
@@ -47,7 +46,7 @@ namespace ChatTCP.Server.Data
                                   replyToMessageId: null, forwardedFromMessageId: sourceMessageId);
         }
 
-      
+        ///Tìm 1 tin nhắn theo MessageId. Trả về null nếu không tồn tại hoặc có lỗi truy vấn.
         public MessageModel GetById(int messageId)
         {
             try
@@ -70,7 +69,7 @@ namespace ChatTCP.Server.Data
             }
         }
 
-      
+        /// Lấy các tin nhắn gần nhất của 1 cuộc hội thoại, sắp xếp cũ -> mới
         public List<MessageModel> GetRecentByConversation(int conversationId, int limit = 50)
         {
             var result = new List<MessageModel>();
@@ -92,12 +91,12 @@ namespace ChatTCP.Server.Data
                 while (reader.Read())
                     result.Add(MapReaderToMessage(reader));
 
-                result.Reverse();
+                result.Reverse(); // trả về theo thứ tự cũ -> mới cho dễ render lên GUI
             }
             catch (SqliteException ex)
             {
                 Console.WriteLine("[MessageRepository] Lỗi GetRecentByConversation: " + ex.Message);
-                
+                // trả về danh sách rỗng thay vì để lỗi rơi ra ngoài làm sập server
             }
 
             return result;
