@@ -34,4 +34,4 @@ CREATE TABLE IF NOT EXISTS Messages (
     SentAt                 TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IX_Messages_ConversationId ON Messages(ConversationId, SentAt);
+CREATE INDEX IF NOT EXISTS IX_Messages_ConversationId ON Messages(ConversationId, SentAt);
