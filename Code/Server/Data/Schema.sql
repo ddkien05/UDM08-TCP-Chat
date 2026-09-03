@@ -1,6 +1,6 @@
 PRAGMA foreign_keys = ON;
 
-CREATE TABLE Users (
+CREATE TABLE IF NOT EXISTS Users (
     UserId       INTEGER PRIMARY KEY AUTOINCREMENT,
     Username     TEXT NOT NULL UNIQUE,
     PasswordHash TEXT NOT NULL,
@@ -10,21 +10,21 @@ CREATE TABLE Users (
     IsOnline     INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE Conversations (
+CREATE TABLE IF NOT EXISTS Conversations (
     ConversationId INTEGER PRIMARY KEY AUTOINCREMENT,
     IsGroup        INTEGER NOT NULL DEFAULT 0,
     Name           TEXT,
     CreatedAt      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE ConversationMembers (
+CREATE TABLE IF NOT EXISTS ConversationMembers (
     ConversationId INTEGER NOT NULL REFERENCES Conversations(ConversationId),
     UserId         INTEGER NOT NULL REFERENCES Users(UserId),
     JoinedAt       TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (ConversationId, UserId)
 );
 
-CREATE TABLE Messages (
+CREATE TABLE IF NOT EXISTS Messages (
     MessageId              INTEGER PRIMARY KEY AUTOINCREMENT,
     ConversationId         INTEGER NOT NULL REFERENCES Conversations(ConversationId),
     SenderId               INTEGER NOT NULL REFERENCES Users(UserId),
