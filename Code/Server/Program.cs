@@ -1,6 +1,7 @@
-﻿using System;
+﻿using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
 using ChatTCP.Server.Services;
+using System;
 namespace ChatTCP.Server
 {
     class Program
@@ -11,7 +12,7 @@ namespace ChatTCP.Server
             ChatServer server = new ChatServer(clientManager);
 
             server.Start();
-
+            DbConnectionFactory.Initialize();
             Console.WriteLine("Nhấn Enter để dừng server...");
             Console.ReadLine();
 
