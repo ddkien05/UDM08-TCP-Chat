@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 
-namespace ChatTCP.Sever
+namespace ChatTCP.Server
 {
 
     public class ClientManager

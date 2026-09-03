@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace ChatTCP.Sever
+namespace ChatTCP.Server
 {
 
     public class ChatServer
