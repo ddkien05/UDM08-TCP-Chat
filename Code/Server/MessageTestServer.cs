@@ -13,6 +13,11 @@ class MessageTestServer
 {
     private static readonly ConcurrentDictionary<string, NetworkStream> _clients = new();
 
+    public static void Log(string message)
+    {
+        Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+    }
+
     static async Task Main()
     {
         Console.OutputEncoding = Encoding.UTF8;
@@ -30,11 +35,12 @@ class MessageTestServer
             try
             {
                 var client = await listener.AcceptTcpClientAsync();
+                Log($"[CONNECT] Client connected from {client.Client.RemoteEndPoint}");
                 _ = Task.Run(() => HandleClientAsync(client, router));
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] Error accepting client: {ex.Message}");
+                Log($"[ERROR] Error accepting client: {ex.Message}");
             }
         }
     }

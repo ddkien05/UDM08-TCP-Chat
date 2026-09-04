@@ -16,6 +16,9 @@ class MessageTestClient
         Console.Write("UserID: ");
         string userId = Console.ReadLine()?.Trim() ?? "usr_101";
 
+        Console.Write("Password: ");
+        string password = Console.ReadLine()?.Trim() ?? "123456";
+
         Console.Write("Name: ");
         string name = Console.ReadLine()?.Trim() ?? "User";
 
@@ -37,12 +40,18 @@ class MessageTestClient
         var networkStream = tcpClient.GetStream();
 
         // Gui AUTH_REQ
-        var authReq = new Packet<object>
+        var authReq = new Packet<AuthRequestData>
         {
             Type = "AUTH_REQ",
             Seq = 1,
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            Data = new { username = userId, display_name = name }
+            Data = new AuthRequestData
+            {
+                Username = userId,
+                Password = password,
+                DisplayName = name,
+                AvatarUrl = null
+            }
         };
         await MessageProtocol.SendPacketAsync(networkStream, authReq);
 
