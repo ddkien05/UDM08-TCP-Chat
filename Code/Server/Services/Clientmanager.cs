@@ -1,33 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
+using ChatTCP.Server.Data;
+using ChatTCP.Server.Networking;
 
 namespace ChatTCP.Server.Services
 {
-
-    /// Quản lý danh sách các client đang kết nối tới server.
-
+  
+    /// Quản lý danh sách client ĐANG ONLINE (đã login/register thành công).
+    /// Biết rõ mỗi kết nối là user nào (UserId/Username), không còn là danh sách TcpClient "vô danh" như trước nữa.
+  
     public class ClientManager
     {
-        private readonly List<TcpClient> _clients = new List<TcpClient>();
-        private readonly object _lock = new object(); // khoá để nhiều Thread không cùng sửa _clients 1 lúc
+        private readonly List<ClientSession> _sessions = new List<ClientSession>();
+        private readonly object _lock = new object();
+        private readonly IUserRepository _userRepository;
 
-        ///Thêm 1 client mới vào danh sách=
-        public void Add(TcpClient client)
+        public ClientManager(IUserRepository userRepository)
         {
-            lock (_lock)
-            {
-                _clients.Add(client);
-            }
-            Console.WriteLine("[ClientManager] Thêm client. Tổng số hiện tại: " + Count);
+            _userRepository = userRepository;
         }
 
-        /// Xoá client khỏi danh sách và đóng socket an toàn khi client rời đi
-        public void Remove(TcpClient client)
+        ///Thêm 1 session mới — gọi sau khi AuthHandler xác thực login/register thành công
+        public void Add(ClientSession session)
         {
             lock (_lock)
             {
-                _clients.Remove(client);
+                _sessions.Add(session);
+            }
+
+            try
+            {
+                _userRepository.SetOnlineStatus(session.UserId, true); // đồng bộ trạng thái online xuống Database
+            }
+            catch (Exception ex)
+            {
+                // Không để lỗi ghi Database làm mất session đã thêm vào RAM, chỉ log lại.
+                Console.WriteLine("[ClientManager] Lỗi cập nhật online status: " + ex.Message);
+            }
+
+            Console.WriteLine($"[ClientManager] {session.Username} online. Tổng số hiện tại: {Count}");
+        }
+
+        ///Xoá session khi client ngắt kết nối, đóng socket an toàn và đánh dấu offline trong Database.
+        public void Remove(TcpClient client)
+        {
+            ClientSession session;
+            lock (_lock)
+            {
+                session = _sessions.FirstOrDefault(s => s.TcpClient == client);
+                if (session != null)
+                    _sessions.Remove(session);
             }
 
             try
@@ -36,19 +60,49 @@ namespace ChatTCP.Server.Services
             }
             catch (Exception ex)
             {
-                // client có thể đã tự đóng trước rồi, chỉ log lại chứ không để văng lỗi ra ngoài
+                // socket có thể đã đóng từ phía client rồi, chỉ log lại chứ không để văng lỗi ra ngoài
                 Console.WriteLine("[ClientManager] Lỗi khi đóng socket: " + ex.Message);
             }
 
-            Console.WriteLine("[ClientManager] Xoá client. Tổng số hiện tại: " + Count);
+            if (session != null)
+            {
+                try
+                {
+                    _userRepository.SetOnlineStatus(session.UserId, false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("[ClientManager] Lỗi cập nhật offline status: " + ex.Message);
+                }
+
+                Console.WriteLine($"[ClientManager] {session.Username} offline. Tổng số hiện tại: {Count}");
+            }
         }
 
-        ///Lấy toàn bộ client đang online — dùng cho broadcast sau này.
-        public List<TcpClient> GetAll()
+        ///Tìm session theo Username — dùng khi muốn gửi tin nhắn riêng tới 1 người cụ thể.
+        public ClientSession FindByUsername(string username)
         {
             lock (_lock)
             {
-                return new List<TcpClient>(_clients);
+                return _sessions.FirstOrDefault(s => s.Username == username);
+            }
+        }
+
+        ///Lấy toàn bộ session đang online — dùng cho broadcast sau này.
+        public List<ClientSession> GetAll()
+        {
+            lock (_lock)
+            {
+                return new List<ClientSession>(_sessions);
+            }
+        }
+
+        ///Lấy danh sách tên hiển thị của những người đang online — dùng để hiện lên GUI.
+        public List<string> GetOnlineDisplayNames()
+        {
+            lock (_lock)
+            {
+                return _sessions.Select(s => s.DisplayName).ToList();
             }
         }
 
@@ -58,7 +112,7 @@ namespace ChatTCP.Server.Services
             {
                 lock (_lock)
                 {
-                    return _clients.Count;
+                    return _sessions.Count;
                 }
             }
         }
