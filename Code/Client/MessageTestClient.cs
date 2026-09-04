@@ -24,7 +24,7 @@ class MessageTestClient
         var tcpClient = new TcpClient();
         try
         {
-            await tcpClient.ConnectAsync("127.0.0.1", 9000);
+            await tcpClient.ConnectAsync("127.0.0.1", 8888);
             Console.WriteLine("Success!\n");
         }
         catch

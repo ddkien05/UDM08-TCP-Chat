@@ -1,4 +1,12 @@
-## 1. Cấu trúc Khung dữ liệu (Frame Format)
+## 1. Thông số kết nối mặc định (Connection Parameters)
+* **Giao thức:** TCP (Transmission Control Protocol)
+* **Cổng mặc định:** 8888
+* **Địa chỉ IP mặc định:** 127.0.0.1
+* **Định dạng dữ liệu:** JSON (JavaScript Object Notation)
+* **Mã hóa ký tự:** UTF-8 (Hỗ trợ Tiếng Việt có dấu và Emoji)
+
+
+## 2. Cấu trúc Khung dữ liệu (Frame Format)
 
 **Định nghĩa Message Framing:**
 Quy định cấu trúc phân định ranh giới cho từng gói tin riêng biệt khi truyền qua luồng dữ liệu liên tục (Byte Stream) của TCP giúp ứng dụng xác định chính xác điểm bắt đầu/kết thúc của mỗi thông điệp, giải quyết triệt để hiện tượng Dính gói và Xé gói.
@@ -15,7 +23,7 @@ Vì TCP truyền theo dạng byte stream, gói tin ứng dụng sẽ được đ
 
 ---
 
-## 2. Định dạng chung Payload (JSON)
+## 3. Định dạng chung Payload (JSON)
 
 Tất cả gói tin gửi qua TCP đều tuân theo cấu trúc JSON gốc:
 
@@ -30,7 +38,7 @@ Tất cả gói tin gửi qua TCP đều tuân theo cấu trúc JSON gốc:
 
 ---
 
-## 3. Danh sách Mã gói tin (Packet Types)
+## 4. Danh sách Mã gói tin (Packet Types)
 
 **Định nghĩa Message Type:**
 Giao thức phải chỉ định có những loại thông điệp nào có thể được gửi và nhận. Hai loại chính là Request message và Response message.
@@ -47,9 +55,9 @@ Giao thức phải chỉ định có những loại thông điệp nào có th�
 
 ---
 
-## 4. Chi tiết Định dạng các Gói tin
+## 5. Chi tiết Định dạng các Gói tin
 
-### 4.1. Xác thực & Kết nối (AUTH)
+### 5.1. Xác thực & Kết nối (AUTH)
 
 Client gửi yêu cầu đăng nhập (AUTH_REQ):
 ```json
@@ -74,14 +82,14 @@ Server phản hồi (AUTH_RES):
   "data": {
     "code": 200,
     "message": "Success",
-    "user_id": "usr_101"
+    "user_id": "usr_101",
+    "display_name": "Nguyễn Văn A",
+    "avatar_url": "https://cdn.example.com/avatars/user_a.png"
   }
 }
 ```
 
----
-
-### 4.2. Gửi & Nhận Tin nhắn (CHAT_MSG)
+### 5.2. Gửi & Nhận Tin nhắn (CHAT_MSG)
 (Hỗ trợ: Reply, Forward, Emoji, Avatar)
 
 ```json
@@ -112,11 +120,12 @@ Server phản hồi (AUTH_RES):
 
 ---
 
-### 4.3. Cập nhật Trạng thái Online / Offline (USER_STATUS_NOTIFY)
+### 5.3. Cập nhật Trạng thái Online / Offline (USER_STATUS_NOTIFY)
 
 ```json
 {
   "type": "USER_STATUS_NOTIFY",
+  "seq": 103,
   "timestamp": 1718000050,
   "data": {
     "user_id": "usr_102",
@@ -129,19 +138,27 @@ Server phản hồi (AUTH_RES):
 
 ---
 
-### 4.4. Giữ kết nối (Heartbeat / Keep-Alive)
+### 5.4. Giữ kết nối (Heartbeat / Keep-Alive)
 
+Client gửi Ping (HEARTBEAT_PING):
 ```json
-{ "type": "HEARTBEAT_PING", "timestamp": 1718000100 }
+{ "type": "HEARTBEAT_PING",
+  "seq": 201,
+  "timestamp": 1718000100,
+  "data": null }
 ```
 
+Server phản hồi Pong (HEARTBEAT_PONG):
 ```json
-{ "type": "HEARTBEAT_PONG", "timestamp": 1718000100 }
+{ "type": "HEARTBEAT_PONG",
+  "seq": 201,
+  "timestamp": 1718000100,
+  "data": null }
 ```
 
 ---
 
-## 5. Bảng Mã Lỗi (Error Codes)
+## 6. Bảng Mã Lỗi (Error Codes)
 
 | Mã lỗi | Tên lỗi | Mô tả |
 | :--- | :--- | :--- |

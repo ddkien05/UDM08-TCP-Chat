@@ -44,6 +44,7 @@
 
                 <Button Content="Đăng nhập"
                         Height="42"
+                        
                         Click="LoginButton_Click"/>
 
             </StackPanel>
