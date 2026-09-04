@@ -9,17 +9,23 @@ namespace Client
         public MainWindow()
         {
             InitializeComponent();
-
             ShowLogin();
         }
 
         private void ShowLogin()
         {
             var loginView = new LoginView();
-
             loginView.LoginSucceeded += ShowContactList;
-
+            loginView.RegisterRequested += ShowRegister;
             MainContent.Content = loginView;
+        }
+
+        private void ShowRegister()
+        {
+            var reg = new RegisterView();
+            reg.RegistrationSucceeded += ShowLogin;
+            reg.BackRequested += ShowLogin;
+            MainContent.Content = reg;
         }
 
         private void ShowContactList()

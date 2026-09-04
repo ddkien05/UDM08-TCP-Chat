@@ -50,7 +50,7 @@
                       Padding="16"
                       VerticalScrollBarVisibility="Auto" Margin="0,0,0,1">
 
-            <StackPanel>
+            <StackPanel x:Name="MessageStack">
 
                 <!-- Tin nhắn của người khác -->
                 <Border Background="{StaticResource SecondaryBubbleBrush}"
@@ -82,9 +82,8 @@
 
                     <TextBlock Text="Khỏe, cảm ơn bạn! 👋"
                                TextWrapping="Wrap"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="14"
-                               Foreground="White"/>
+                               Style="{StaticResource BodyRegular}"
+                               Foreground="{StaticResource TextOnPrimaryBrush}"/>
 
                 </Border>
 
@@ -134,8 +133,49 @@
         </ScrollViewer>
 
         <!-- Message Input -->
-        <Grid Grid.Row="2"
-              Margin="16,16,16,16">
+        <StackPanel Grid.Row="2" Margin="16,16,16,16">
+
+            <Border x:Name="ReplyPreview"
+                    Visibility="Collapsed"
+                    Background="{StaticResource BackgroundBrush}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="1"
+                    Padding="8"
+                    Margin="0,0,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock x:Name="ReplyLabel" Text="Replying to ..." Style="{StaticResource Caption}" />
+                        <TextBlock x:Name="ReplySnippet" TextWrapping="Wrap" Style="{StaticResource BodyRegular}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="X" Click="CancelReply_Click" />
+                </Grid>
+            </Border>
+
+            <Border x:Name="ForwardPreview"
+                    Visibility="Collapsed"
+                    Background="{StaticResource BackgroundBrush}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="1"
+                    Padding="8"
+                    Margin="0,0,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock x:Name="ForwardLabel" Text="Forwarding message" Style="{StaticResource Caption}" />
+                        <TextBlock x:Name="ForwardSnippet" TextWrapping="Wrap" Style="{StaticResource BodyRegular}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="X" Click="CancelForward_Click" />
+                </Grid>
+            </Border>
+
+            <Grid>
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -168,11 +208,30 @@
                     x:Name="SendButton"
                     Width="70"
                     Margin="8,17,0,3"
-                    Background="{StaticResource PrimaryBrush}"
-                    Foreground="White"
+                    Style="{StaticResource ChatSendButton}"
                     Click="SendButton_Click"/>
 
-        </Grid>
+            </Grid>
+        </StackPanel>
+
+        <Popup x:Name="EmojiPopup"
+               PlacementTarget="{Binding ElementName=EmojiButton}"
+               Placement="Top"
+               StaysOpen="False">
+            <Border Background="{StaticResource BackgroundBrush}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="1"
+                    Padding="8">
+                <StackPanel Width="300">
+                    <TextBox x:Name="EmojiSearchBox"
+                             Margin="0,0,0,8"
+                             TextChanged="EmojiSearchBox_TextChanged" />
+                    <ScrollViewer Height="180">
+                        <WrapPanel x:Name="EmojiWrap" />
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Popup>
 
     </Grid>
 

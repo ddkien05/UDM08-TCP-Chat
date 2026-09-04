@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using Client.Services;
+using System.Windows.Xps;
+using ChatTCP.Client.Networking;
 
-namespace Client.Views
+namespace ChatTCP.Client.Views
 {
     public partial class LoginView : UserControl
     {
         private readonly ClientSocketService _socketService;
 
         public event Action? LoginSucceeded;
+        public event Action? RegisterRequested;
 
         public LoginView()
         {
             InitializeComponent();
 
-            _socketService = new ClientSocketService();
+            _socketService = new ClientSocketService(Dispatcher);
         }
 
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -80,6 +82,12 @@ namespace Client.Views
                 }
             }
         }
+
+        private void RegisterNavButton_Click(object sender, RoutedEventArgs e)
+        {
+            RegisterRequested?.Invoke();
+        }
+
 
         private void ShowError(string message)
         {

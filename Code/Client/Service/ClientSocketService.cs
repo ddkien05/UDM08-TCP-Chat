@@ -21,7 +21,7 @@ namespace ChatTCP.Client.Networking
         private CancellationTokenSource? _cts;
         private readonly Dispatcher? _dispatcher;
 
-        public ClientSocketService(Dispatcher? dispatcher = null)
+        public ClientSocketService(Dispatcher? dispatcher = null) {
             _dispatcher = dispatcher;
         }
 
