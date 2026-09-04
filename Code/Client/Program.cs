@@ -4,8 +4,6 @@ using TcpChat.Common.Constants;
 
 class Chatclient
 {
-    private const string SERVER_IP = "127.0.0.1";
-    private const int SERVER_PORT = 9999;
 
     private static TcpClient client;
 
@@ -58,7 +56,7 @@ class Chatclient
         {
             NetworkStream stream = client.GetStream();
 
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[NetworkConstants.BufferSize];
 
             while (true)
             {

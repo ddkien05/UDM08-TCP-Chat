@@ -5,8 +5,6 @@ using TcpChat.Common.Constants;
 
 class Server
 {
-    // Server chạy ở port 9999
-    private const int PORT = 9999;
 
     // TcpListener dùng để lắng nghe client
     private static TcpListener listener;
@@ -28,7 +26,7 @@ class Server
         Console.WriteLine("================================");
         Console.WriteLine("        TCP CHAT SERVER");
         Console.WriteLine("================================");
-        Console.WriteLine($"Server dang chay tai port {PORT}");
+        Console.WriteLine($"Server dang chay tai port {NetworkConstants.ServerPort}");
         Console.WriteLine("Dang cho client...");
         Console.WriteLine();
 
