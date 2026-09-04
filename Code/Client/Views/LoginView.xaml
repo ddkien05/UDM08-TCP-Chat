@@ -1,4 +1,4 @@
-<UserControl x:Class="Client.Views.LoginView"
+<UserControl x:Class="ChatTCP.Client.Views.LoginView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -44,8 +44,12 @@
 
                 <Button Content="Đăng nhập"
                         Height="42"
-                        
                         Click="LoginButton_Click"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                    <TextBlock Text="Don't have an account?" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <Button x:Name="RegisterNavButton" Content="Register" Click="RegisterNavButton_Click"/>
+                </StackPanel>
 
             </StackPanel>
 

@@ -23,10 +23,28 @@
 
                 <TextBlock x:Name="ErrorText" Foreground="Red" Visibility="Collapsed" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="BackButton" Content="Back" Width="80" Margin="0,0,8,0" Click="BackButton_Click"/>
-                    <Button x:Name="RegisterButton" Content="Register" Width="100" Style="{StaticResource ChatSendButton}" Click="RegisterButton_Click"/>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Back -->
+                    <Button x:Name="BackButton"
+            Grid.Column="2"
+            Content="Quay về"
+            Width="100"
+            Click="BackButton_Click"/>
+
+                    <!-- Register -->
+                    <Button x:Name="RegisterButton"
+            Grid.Column="0"
+            Content="Đăng ký"
+            Width="100"
+            Style="{StaticResource ChatSendButton}"
+            Click="RegisterButton_Click"/>
+                </Grid>
             </StackPanel>
         </Border>
     </Grid>

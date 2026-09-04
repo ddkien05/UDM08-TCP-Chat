@@ -1,5 +1,4 @@
 ﻿using ChatTCP.Client.Views;
-using Client.Views;
 using System.Windows;
 
 namespace Client

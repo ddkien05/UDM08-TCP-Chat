@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Client.Views
+namespace ChatTCP.Client.Views
 {
     public partial class ContactListView : UserControl
     {
