@@ -22,6 +22,7 @@ namespace ChatTCP.Client.Networking
         private readonly Dispatcher? _dispatcher;
 
         public ClientSocketService(Dispatcher? dispatcher = null)
+        {
             _dispatcher = dispatcher;
         }
 
@@ -62,26 +63,34 @@ namespace ChatTCP.Client.Networking
             {
                 _cts?.Cancel();
             }
-            catch { }
+            catch
+            {
+            }
 
             try
             {
                 _stream?.Close();
                 _client?.Close();
             }
-            catch { }
+            catch
+            {
+            }
             finally
             {
                 _stream = null;
                 _client = null;
                 _cts = null;
+
                 InvokeOnUI(() => OnDisconnected?.Invoke());
             }
         }
 
         public async Task SendPacketAsync<T>(Packet<T> packet)
         {
-            if (!IsConnected || _stream == null) throw new InvalidOperationException("Not connected");
+            if (!IsConnected || _stream == null)
+            {
+                throw new InvalidOperationException("Not connected");
+            }
 
             try
             {
@@ -90,6 +99,7 @@ namespace ChatTCP.Client.Networking
             catch (Exception ex)
             {
                 RaiseError($"Send error: {ex.Message}");
+
                 // Xử lý như đã mất kết nối
                 Disconnect();
             }
@@ -110,49 +120,81 @@ namespace ChatTCP.Client.Networking
 
         private async Task ReceiveLoopAsync(CancellationToken token)
         {
-            if (_stream == null) return;
+            if (_stream == null)
+            {
+                return;
+            }
 
             try
             {
                 while (!token.IsCancellationRequested)
                 {
-                    string? raw = await MessageProtocol.ReceiveRawJsonAsync(_stream);
-                    if (raw == null) break;
+                    string? raw =
+                        await MessageProtocol.ReceiveRawJsonAsync(_stream);
+
+                    if (raw == null)
+                    {
+                        break;
+                    }
 
                     Packet<JsonElement>? basePacket = null;
+
                     try
                     {
-                        basePacket = JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
+                        basePacket =
+                            JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
                     }
-                    catch (Exception) { /* ignore malformed */ }
+                    catch
+                    {
+                        // Bỏ qua packet JSON không hợp lệ
+                    }
 
-                    if (basePacket == null) continue;
+                    if (basePacket == null)
+                    {
+                        continue;
+                    }
 
                     if (basePacket.Type == "CHAT_MSG")
                     {
                         try
                         {
-                            var chatPacket = JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
+                            var chatPacket =
+                                JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
+
                             if (chatPacket != null)
                             {
-                                InvokeOnUI(() => OnChatMessageReceived?.Invoke(chatPacket));
+                                InvokeOnUI(() =>
+                                    OnChatMessageReceived?.Invoke(chatPacket));
                             }
                         }
                         catch (Exception ex)
                         {
-                            RaiseError($"Receive parse error: {ex.Message}");
+                            RaiseError(
+                                $"Receive parse error: {ex.Message}");
                         }
                     }
                     else
                     {
-                        // Có thể mở rộng để phát sự kiện chung cho các loại packet khác.
-                        // Hiện tại bỏ qua.
+                        // Có thể mở rộng xử lý:
+                        // LOGIN_RES
+                        // REGISTER_RES
+                        // CONTACT_LIST_RES
+                        // USER_SEARCH_RES
+                        // AVATAR_RES
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Disconnect() chủ động thì có thể đi vào đây.
+            }
             catch (Exception ex)
             {
-                RaiseError($"Receive loop error: {ex.Message}");
+                if (!token.IsCancellationRequested)
+                {
+                    RaiseError(
+                        $"Receive loop error: {ex.Message}");
+                }
             }
             finally
             {
@@ -167,22 +209,35 @@ namespace ChatTCP.Client.Networking
                 try
                 {
                     if (_dispatcher.CheckAccess())
+                    {
                         action();
+                    }
                     else
+                    {
                         _dispatcher.BeginInvoke(action);
+                    }
                 }
-                catch { /* swallow to avoid UI crash */ }
+                catch
+                {
+                    // Không để lỗi Dispatcher làm crash UI
+                }
             }
             else
             {
-                // Không có Dispatcher, thực thi trên threadpool
-                try { Task.Run(action); } catch { }
+                try
+                {
+                    Task.Run(action);
+                }
+                catch
+                {
+                }
             }
         }
 
         private void RaiseError(string message)
         {
-            InvokeOnUI(() => OnError?.Invoke(message));
+            InvokeOnUI(() =>
+                OnError?.Invoke(message));
         }
     }
 }
