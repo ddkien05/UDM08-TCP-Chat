@@ -67,8 +67,9 @@ Client gửi yêu cầu đăng nhập (AUTH_REQ):
   "timestamp": 1718000001,
   "data": {
     "username": "nguyenvana",
+    "password": "123456",
     "display_name": "Nguyễn Văn A",
-    "avatar_url": "https://cdn.example.com/avatars/user_a.png"
+    "avatar_url": null
   }
 }
 ```
@@ -84,7 +85,7 @@ Server phản hồi (AUTH_RES):
     "message": "Success",
     "user_id": "usr_101",
     "display_name": "Nguyễn Văn A",
-    "avatar_url": "https://cdn.example.com/avatars/user_a.png"
+    "avatar_url": null
   }
 }
 ```
@@ -104,7 +105,7 @@ Server phản hồi (AUTH_RES):
     "sender": {
       "user_id": "usr_101",
       "display_name": "Nguyễn Văn A",
-      "avatar_url": "https://cdn.example.com/avatars/user_a.png"
+      "avatar_url": null
     },
     "content": "Chào bạn! Hôm nay họp lúc mấy giờ nhỉ? 😊🔥",
     "reply_to": {
