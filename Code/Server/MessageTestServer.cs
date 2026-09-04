@@ -67,12 +67,19 @@ class MessageTestServer
                     _clients[userId] = networkStream;
                     Console.WriteLine($"[+] User {userId} Online");
 
-                    var authRes = new Packet<object>
+                    var authRes = new Packet<AuthResponseData>
                     {
                         Type = "AUTH_RES",
                         Seq = basePacket.Seq,
                         Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                        Data = new { code = 200, message = "Success", user_id = userId }
+                        Data = new AuthResponseData
+                        {
+                            Code = 200,
+                            Message = "Success",
+                            UserId = userId,
+                            DisplayName = basePacket.Data.TryGetProperty("display_name", out var dn) ? dn.GetString() ?? userId : userId,
+                            AvatarUrl = null
+                        }
                     };
                     await MessageProtocol.SendPacketAsync(networkStream, authRes);
                 }
