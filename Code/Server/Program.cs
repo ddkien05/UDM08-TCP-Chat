@@ -19,10 +19,13 @@ namespace ChatTCP.Server
                 return; // Nếu lỗi DB thì dừng luôn, không chạy Server nữa
             }
 
-            ClientManager clientManager = new ClientManager();
-            ChatServer server = new ChatServer(clientManager);
+            IUserRepository userRepository = new UserRepository();
+            ClientManager clientManager = new ClientManager(userRepository);
+            AuthHandler authHandler = new AuthHandler(userRepository, clientManager);
+            ChatServer server = new ChatServer(authHandler);
 
             server.Start();
+
             Console.WriteLine("Nhấn Enter để dừng server...");
             Console.ReadLine();
 
