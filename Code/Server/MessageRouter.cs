@@ -1,10 +1,3 @@
-﻿using System.Collections.Concurrent;
-using System.Net.Sockets;
-using ChatTCP.Common.Models;
-using ChatTCP.Common.Protocol;
-
-namespace ChatTCP.Server.Services;
-
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using ChatTCP.Common.Models;
@@ -26,11 +19,9 @@ public class MessageRouter
         _messageRepository = messageRepository;
     }
 
+    /// <summary>
     /// Định tuyến tin nhắn PRIVATE.
-    /// Hỗ trợ:
-    /// - Tin nhắn bình thường
-    /// - Reply
-    /// - Forward
+    /// Hỗ trợ tin nhắn thường, Reply và Forward.
     /// </summary>
     public async Task RouteChatMessageAsync(
         Packet<ChatMessageData> chatPacket,
@@ -40,6 +31,7 @@ public class MessageRouter
         {
             var messageData = chatPacket.Data;
 
+            // Chỉ xử lý tin nhắn PRIVATE
             if (messageData.TargetType != "PRIVATE")
                 return;
 
@@ -47,90 +39,99 @@ public class MessageRouter
             // 1. KIỂM TRA REPLY
             // =====================================================
 
-            if (messageData.ReplyToMessageId.HasValue)
+            if (messageData.ReplyTo != null &&
+                !string.IsNullOrWhiteSpace(messageData.ReplyTo.MsgId))
             {
-                int replyId = messageData.ReplyToMessageId.Value;
-
-                var originalMessage = _messageRepository.GetById(replyId);
-
-                if (originalMessage == null)
+                if (int.TryParse(
+                    messageData.ReplyTo.MsgId,
+                    out int replyMessageId))
                 {
-                    await SendErrorAsync(
-                        senderStream,
-                        chatPacket.Seq,
-                        404,
-                        $"Không tìm thấy tin nhắn gốc ID={replyId}."
+                    var originalMessage =
+                        _messageRepository.GetById(replyMessageId);
+
+                    if (originalMessage == null)
+                    {
+                        await SendErrorAsync(
+                            senderStream,
+                            chatPacket.Seq,
+                            404,
+                            $"Không tìm thấy tin nhắn gốc ID={replyMessageId}."
+                        );
+
+                        return;
+                    }
+
+                    Console.WriteLine(
+                        $"[REPLY] User {messageData.Sender.UserId} " +
+                        $"reply MessageId={replyMessageId}"
                     );
-
-                    return;
                 }
-
-                Console.WriteLine(
-                    $"[REPLY] User {messageData.Sender.UserId} reply MessageId={replyId}"
-                );
             }
-
 
             // =====================================================
             // 2. KIỂM TRA FORWARD
             // =====================================================
 
-            if (messageData.ForwardedFromMessageId.HasValue)
+            /*
+             * ChatMessageData hiện tại của m chỉ có:
+             *
+             * IsForwarded
+             * ForwardFromName
+             *
+             * Chưa có ForwardFromMessageId.
+             *
+             * Vì vậy ở đây chỉ ghi nhận tin nhắn Forward,
+             * chưa thể tìm MessageId gốc.
+             */
+
+            if (messageData.IsForwarded)
             {
-                int forwardId = messageData.ForwardedFromMessageId.Value;
-
-                var originalMessage =
-                    _messageRepository.GetById(forwardId);
-
-                if (originalMessage == null)
-                {
-                    await SendErrorAsync(
-                        senderStream,
-                        chatPacket.Seq,
-                        404,
-                        $"Không tìm thấy tin nhắn gốc ID={forwardId} để forward."
-                    );
-
-                    return;
-                }
-
                 Console.WriteLine(
-                    $"[FORWARD] User {messageData.Sender.UserId} forward MessageId={forwardId}"
+                    $"[FORWARD] User {messageData.Sender.UserId} " +
+                    $"forward message from {messageData.ForwardFromName}"
                 );
             }
 
-
             // =====================================================
-            // 3. FORWARD NHIỀU ĐÍCH
+            // 3. LẤY DANH SÁCH NGƯỜI NHẬN
             // =====================================================
-
-            /*
-             * TargetId có thể chứa nhiều user:
-             *
-             * "user01,user02,user03"
-             *
-             * Server sẽ gửi cùng một packet đến tất cả user.
-             */
 
             string[] targets = messageData.TargetId
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Split(
+                    ',',
+                    StringSplitOptions.RemoveEmptyEntries
+                )
                 .Select(x => x.Trim())
                 .Distinct()
                 .ToArray();
 
+            if (targets.Length == 0)
+            {
+                await SendErrorAsync(
+                    senderStream,
+                    chatPacket.Seq,
+                    400,
+                    "Không có người nhận."
+                );
+
+                return;
+            }
 
             // =====================================================
-            // 4. GỬI ĐẾN TỪNG ĐÍCH
+            // 4. GỬI MESSAGE ĐẾN TỪNG NGƯỜI NHẬN
             // =====================================================
 
             foreach (string targetId in targets)
             {
-                if (_clientMap.TryGetValue(targetId, out var targetStream))
+                if (_clientMap.TryGetValue(
+                    targetId,
+                    out var targetStream))
                 {
                     try
                     {
                         Console.WriteLine(
-                            $"[ROUTER] {messageData.Sender.UserId} -> {targetId}"
+                            $"[ROUTER] " +
+                            $"{messageData.Sender.UserId} -> {targetId}"
                         );
 
                         await MessageProtocol.SendPacketAsync(
@@ -141,7 +142,8 @@ public class MessageRouter
                     catch (Exception ex)
                     {
                         Console.WriteLine(
-                            $"[ROUTER] Không thể gửi đến {targetId}: {ex.Message}"
+                            $"[ROUTER] Không thể gửi đến {targetId}: " +
+                            ex.Message
                         );
                     }
                 }
@@ -161,14 +163,13 @@ public class MessageRouter
         }
     }
 
-
     // =============================================================
     // GỬI ERROR
     // =============================================================
 
     private static async Task SendErrorAsync(
         NetworkStream stream,
-        long seq,
+        int seq,
         int code,
         string message)
     {
@@ -189,49 +190,5 @@ public class MessageRouter
             stream,
             errorPacket
         );
-    }
-}
-
-public class MessageRouter(ConcurrentDictionary<string, NetworkStream> clientMap)
-{
-    /// <summary>
-    /// Định tuyến tin nhắn chat đến người nhận dựa trên loại và ID của người nhận.
-    /// </summary>
-   public async Task RouteChatMessageAsync(Packet<ChatMessageData> chatPacket, NetworkStream senderStream)
-    {
-        try
-        {
-            var messageData = chatPacket.Data;
-            if (messageData.TargetType == "PRIVATE")
-            {
-                if (clientMap.TryGetValue(messageData.TargetId, out var targetStream))
-                {
-                    Console.WriteLine($"[ROUTER] Message forwarded: {messageData.Sender.UserId} -> {messageData.TargetId}");
-                    await MessageProtocol.SendPacketAsync(targetStream, chatPacket);
-                }
-                else
-                {
-                    Console.WriteLine($"[ROUTER] User {messageData.TargetId} is Offline");
-
-                    var errorPacket = new Packet<ErrorData>
-                    {
-                        Type = "ERROR",
-                        Seq = chatPacket.Seq,
-                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                        Data = new ErrorData
-                        {
-                            Code = 404,
-                            Message = $"User {messageData.TargetId} is Offline or does not exist."
-                        }
-                    };
-
-                    await MessageProtocol.SendPacketAsync(senderStream, errorPacket);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[ERROR] Error routing message: {ex.Message}");
-        }
     }
 }
