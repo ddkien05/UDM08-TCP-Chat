@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using Client.Services;
+using ChatTCP.Client.Networking;
 
 namespace Client.Views
 {
@@ -15,77 +15,38 @@ namespace Client.Views
         {
             InitializeComponent();
 
-            _socketService = new ClientSocketService();
+            _socketService =
+                new ClientSocketService(Dispatcher);
         }
 
-        private async void LoginButton_Click(object sender, RoutedEventArgs e)
+        private async void LoginButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            string username = UsernameTextBox.Text.Trim();
-            string password = PasswordBox.Password;
-
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                ShowError("Vui lòng nhập tên đăng nhập.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                ShowError("Vui lòng nhập mật khẩu.");
-                return;
-            }
-
-            ErrorText.Visibility = Visibility.Collapsed;
-
             try
             {
-                // Tạm khóa nút để tránh người dùng bấm nhiều lần
-                if (sender is Button loginButton)
+                bool connected =
+                    await _socketService.ConnectAsync(
+                        "127.0.0.1",
+                        8888);
+
+                if (connected)
                 {
-                    loginButton.IsEnabled = false;
-                    loginButton.Content = "Đang kết nối...";
+                    MessageBox.Show(
+                        "Kết nối Server thành công.");
+
+                    LoginSucceeded?.Invoke();
                 }
-
-                bool connected = await _socketService.ConnectAsync(
-                    "127.0.0.1",
-                    9000
-                );
-
-                if (!connected)
+                else
                 {
-                    ShowError("Không thể kết nối tới Server.");
-
-                    return;
+                    MessageBox.Show(
+                        "Không thể kết nối Server.");
                 }
-
-                // QUAN TRỌNG:
-                // Hiện server nhánh dev mới chỉ nhận TCP connection.
-                // Username/password CHƯA được server xác thực.
-                //
-                // Sau khi server có AUTH_REQ / AUTH_RES,
-                // phần xác thực thật sẽ được thêm tại đây.
-
-                LoginSucceeded?.Invoke();
             }
             catch (Exception ex)
             {
-                ShowError("Lỗi kết nối: " + ex.Message);
+                MessageBox.Show(ex.Message);
             }
-            finally
-            {
-                if (sender is Button loginButton)
-                {
-                    loginButton.IsEnabled = true;
-                    loginButton.Content = "Đăng nhập";
-                }
-            }
-        }
-
-        private void ShowError(string message)
-        {
-            ErrorText.Text = message;
-            ErrorText.Visibility = Visibility.Visible;
         }
     }
 }
-
