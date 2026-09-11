@@ -87,7 +87,7 @@ namespace ChatTCP.Client.Views
             });
         }
 
-        private void PhoneNumberTextBox_TextChanged()
+        private void PhoneNumberTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
 
         }

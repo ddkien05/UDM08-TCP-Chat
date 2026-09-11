@@ -32,7 +32,53 @@ namespace ChatTCP.Client.Views
         {
             InitializeComponent();
             _socketService = new ClientSocketService(Dispatcher);
+
+            // Subscribe to received messages to update UI and auto-scroll
+            if (_socketService != null)
+            {
+                _socketService.OnChatMessageReceived += OnChatMessageReceived;
+            }
+
             PopulateEmojis();
+        }
+
+        /// <summary>
+        /// Handles received chat messages from the socket service
+        /// </summary>
+        private void OnChatMessageReceived(Packet<ChatMessageData> packet)
+        {
+            try
+            {
+                if (packet?.Data != null)
+                {
+                    // Append received message to UI
+                    AppendReceivedMessageToUi(packet.Data);
+                    // Auto-scroll to show the newly received message
+                    ScrollToBottom();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error handling received message: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Scrolls the message scroll viewer to the bottom to show the latest message
+        /// </summary>
+        private void ScrollToBottom()
+        {
+            try
+            {
+                if (MessageScrollViewer != null)
+                {
+                    MessageScrollViewer.ScrollToEnd();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error scrolling to bottom: {ex.Message}");
+            }
         }
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
@@ -241,6 +287,54 @@ namespace ChatTCP.Client.Views
             border.ContextMenu = cm;
 
             MessageStack.Children.Add(border);
+
+            // Auto-scroll to bottom to show the newly added message
+            ScrollToBottom();
+        }
+
+        private void AppendReceivedMessageToUi(ChatMessageData data)
+        {
+            var border = new Border
+            {
+                Background = (System.Windows.Media.Brush)FindResource("SecondaryBubbleBrush"),
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(12, 8, 12, 8),
+                Margin = new Thickness(0, 4, 0, 4),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                MaxWidth = 300
+            };
+
+            var tb = new TextBlock
+            {
+                Text = data.Content,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = (System.Windows.Media.FontFamily)FindResource("AppFontFamily"),
+                FontSize = 14
+            };
+
+            border.Child = tb;
+
+            // add context menu to received message
+            var cm = new ContextMenu();
+            var mi1 = new MenuItem { Header = "Reply" };
+            mi1.Click += ReplyMenu_Click;
+            var mi2 = new MenuItem { Header = "Forward" };
+            mi2.Click += ForwardMenu_Click;
+            cm.Items.Add(mi1);
+            cm.Items.Add(mi2);
+            border.ContextMenu = cm;
+
+            MessageStack.Children.Add(border);
+
+            // Add timestamp
+            var timestamp = new TextBlock
+            {
+                Text = DateTime.Now.ToString("HH:mm"),
+                Style = (System.Windows.Style)FindResource("Caption"),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(4, 0, 0, 8)
+            };
+            MessageStack.Children.Add(timestamp);
         }
     }
 }
