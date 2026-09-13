@@ -5,18 +5,22 @@ using ChatTCP.Client.Networking;
 
 namespace Client.Views
 {
-    public partial class LoginView : UserControl
+    public partial class LoginView :
+        UserControl
     {
-        private readonly ClientSocketService _socketService;
+        private readonly ClientSocketService
+            _socketService;
 
-        public event Action? LoginSucceeded;
+        public event Action<ClientSocketService>?
+            LoginSucceeded;
 
         public LoginView()
         {
             InitializeComponent();
 
             _socketService =
-                new ClientSocketService(Dispatcher);
+                new ClientSocketService(
+                    Dispatcher);
         }
 
         private async void LoginButton_Click(
@@ -26,16 +30,25 @@ namespace Client.Views
             try
             {
                 bool connected =
-                    await _socketService.ConnectAsync(
-                        "127.0.0.1",
-                        8888);
+                    await _socketService
+                        .ConnectAsync(
+                            "127.0.0.1",
+                            8888);
 
                 if (connected)
                 {
                     MessageBox.Show(
                         "Kết nối Server thành công.");
 
-                    LoginSucceeded?.Invoke();
+                    /*
+                     * Truyền socket hiện tại sang màn sau.
+                     *
+                     * Không tạo ClientSocketService mới,
+                     * nếu không sẽ mất connection/event
+                     * USER_STATUS_NOTIFY.
+                     */
+                    LoginSucceeded?.Invoke(
+                        _socketService);
                 }
                 else
                 {
@@ -45,7 +58,8 @@ namespace Client.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(
+                    ex.Message);
             }
         }
     }

@@ -1,6 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<ItemGroup>
+	  <None Remove="Assets\Icon\icon_chat.png" />
+	  <None Remove="Assets\Icon\icon_contacts.png" />
+	  <None Remove="Assets\Icon\icon_edit.png" />
+	  <None Remove="Assets\Icon\icon_emoji.png" />
+	  <None Remove="Assets\Icon\icon_reply.png" />
+	  <None Remove="Assets\Icon\icon_search.png" />
+	  <None Remove="Assets\Icon\icon_send.png" />
+	  <None Remove="Assets\Icon\icon_settings.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Assets\Icon\icon_chat.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
+	  <Resource Include="Assets\Icon\icon_contacts.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Assets\Icon\icon_edit.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\Common\Common.csproj" />
 	</ItemGroup>
 
@@ -14,6 +40,16 @@
 
 	<ItemGroup>
 		<Resource Include="Assets\Fonts\Roboto-VariableFont_wdth,wght.ttf" />
+		<Resource Include="Assets\Icon\icon_emoji.png">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Assets\Icon\icon_reply.png">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Assets\Icon\icon_send.png">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Assets\Icon\icon_settings.png" />
 	</ItemGroup>
 
 </Project>

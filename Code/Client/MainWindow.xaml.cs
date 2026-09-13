@@ -1,10 +1,12 @@
 ﻿using ChatTCP.Client.Views;
 using Client.Views;
+using ChatTCP.Client.Networking;
 using System.Windows;
 
 namespace Client
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow :
+        Window
     {
         public MainWindow()
         {
@@ -13,23 +15,50 @@ namespace Client
             ShowLogin();
         }
 
+        // =====================================================
+        // LOGIN
+        // =====================================================
+
         private void ShowLogin()
         {
-            var loginView = new LoginView();
+            var loginView =
+                new LoginView();
 
-            loginView.LoginSucceeded += ShowContactList;
+            loginView.LoginSucceeded +=
+                ShowContactList;
 
-            MainContent.Content = loginView;
+            MainContent.Content =
+                loginView;
         }
 
-        private void ShowContactList()
+        // =====================================================
+        // CONTACT LIST
+        // =====================================================
+
+        private void ShowContactList(
+            ClientSocketService socketService)
         {
-            MainContent.Content = new ContactListView();
+            /*
+             * Quan trọng:
+             *
+             * Dùng lại ClientSocketService từ LoginView.
+             *
+             * Nhờ đó ContactListView nhận được
+             * USER_STATUS_NOTIFY realtime.
+             */
+            MainContent.Content =
+                new ContactListView(
+                    socketService);
         }
 
-        public void ShowChatView()
+        // =====================================================
+        // CHAT
+        // =====================================================
+
+        /*public void ShowChatView()
         {
-            MainContent.Content = new ChatView();
-        }
+            MainContent.Content =
+                new ChatView();
+        }*/
     }
 }
