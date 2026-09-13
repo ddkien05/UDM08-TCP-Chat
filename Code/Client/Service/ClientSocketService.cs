@@ -30,9 +30,9 @@ namespace ChatTCP.Client.Networking
         public bool IsConnected =>
             _client != null && _client.Connected && _stream != null;
 
-        // =====================================================
+        
         // EVENTS
-        // =====================================================
+        
 
         public event Action<Packet<ChatMessageData>>?
             OnChatMessageReceived;
@@ -46,9 +46,9 @@ namespace ChatTCP.Client.Networking
         public event Action?
             OnDisconnected;
 
-        // =====================================================
+        
         // CONNECT
-        // =====================================================
+        
 
         public async Task<bool> ConnectAsync(
             string host = "127.0.0.1",
@@ -84,9 +84,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // DISCONNECT
-        // =====================================================
+        
 
         public void Disconnect()
         {
@@ -117,9 +117,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // SEND PACKET
-        // =====================================================
+        
 
         public async Task SendPacketAsync<T>(
             Packet<T> packet)
@@ -145,9 +145,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // SEND CHAT MESSAGE
-        // =====================================================
+        
 
         public async Task SendChatMessageAsync(
             ChatMessageData data)
@@ -169,9 +169,9 @@ namespace ChatTCP.Client.Networking
             await SendPacketAsync(packet);
         }
 
-        // =====================================================
+        
         // RECEIVE LOOP
-        // =====================================================
+        
 
         private async Task ReceiveLoopAsync(
             CancellationToken token)
@@ -265,9 +265,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // CHAT MESSAGE
-        // =====================================================
+        
 
         private void TryHandleChatMessage(
             string raw)
@@ -294,9 +294,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // ONLINE / OFFLINE NOTIFY
-        // =====================================================
+        
 
         private void TryHandleUserStatus(
             string raw)
@@ -324,9 +324,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // ERROR PACKET
-        // =====================================================
+        
 
         private void TryHandleError(
             string raw)
@@ -352,9 +352,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // UI THREAD
-        // =====================================================
+        
 
         private void InvokeOnUI(
             Action action)
@@ -390,9 +390,9 @@ namespace ChatTCP.Client.Networking
             }
         }
 
-        // =====================================================
+        
         // ERROR EVENT
-        // =====================================================
+        
 
         private void RaiseError(
             string message)

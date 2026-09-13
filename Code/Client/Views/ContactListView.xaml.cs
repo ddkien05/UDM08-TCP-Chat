@@ -1,10 +1,12 @@
 ﻿using Microsoft.Win32;
+
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -19,7 +21,7 @@ namespace Client.Views
     public partial class ContactListView : UserControl
     {
         // =====================================================
-        // DATA
+        // CHAT DATA
         // =====================================================
 
         public ObservableCollection<ChatItem> Chats { get; }
@@ -48,9 +50,9 @@ namespace Client.Views
 
             _socketService = socketService;
 
-            // =============================================
-            // SOCKET ONLINE STATUS EVENT
-            // =============================================
+            // =================================================
+            // SOCKET STATUS EVENT
+            // =================================================
 
             if (_socketService != null)
             {
@@ -61,9 +63,9 @@ namespace Client.Views
                     ContactListView_Unloaded;
             }
 
-            // =============================================
-            // AVATAR FOLDER
-            // =============================================
+            // =================================================
+            // AVATAR STORAGE
+            // =================================================
 
             _avatarFolder =
                 Path.Combine(
@@ -77,9 +79,9 @@ namespace Client.Views
                     _avatarFolder,
                     "my-avatar.png");
 
-            // =============================================
-            // COLLECTION VIEW
-            // =============================================
+            // =================================================
+            // CHAT COLLECTION
+            // =================================================
 
             _chatView =
                 CollectionViewSource
@@ -91,11 +93,15 @@ namespace Client.Views
             ChatList.ItemsSource =
                 _chatView;
 
-            // =============================================
-            // SAMPLE DATA
-            // =============================================
+            // =================================================
+            // TEMP DATA
+            // =================================================
 
             LoadSampleData();
+
+            // =================================================
+            // MY AVATAR
+            // =================================================
 
             LoadSavedAvatar();
 
@@ -206,7 +212,7 @@ namespace Client.Views
         }
 
         // =====================================================
-        // CLEAR
+        // CLEAR CHAT
         // =====================================================
 
         public void ClearChats()
@@ -215,12 +221,12 @@ namespace Client.Views
 
             _chatView.Refresh();
 
-            UpdateEmptyState();
-
             ChatContentHost.Content = null;
 
             NoChatSelectedPanel.Visibility =
                 Visibility.Visible;
+
+            UpdateEmptyState();
         }
 
         // =====================================================
@@ -241,7 +247,8 @@ namespace Client.Views
                     .Trim()
                 ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(keyword))
+            if (string.IsNullOrWhiteSpace(
+                    keyword))
             {
                 return true;
             }
@@ -270,7 +277,7 @@ namespace Client.Views
         }
 
         // =====================================================
-        // CLICK CHAT
+        // SELECT CHAT
         // =====================================================
 
         private void ChatList_SelectionChanged(
@@ -282,15 +289,6 @@ namespace Client.Views
             {
                 return;
             }
-
-            /*
-             * Đây chính là phần trước đó bị thiếu.
-             *
-             * User click item
-             * -> tạo ChatView
-             * -> truyền user được chọn
-             * -> đưa ChatView vào cột bên phải.
-             */
 
             var chatView =
                 new ChatView(
@@ -449,17 +447,18 @@ namespace Client.Views
                     StringComparison.OrdinalIgnoreCase);
 
             ChatItem? chat =
-                Chats.FirstOrDefault(
-                    x =>
-                        !string.IsNullOrWhiteSpace(
-                            status.UserId)
-                        &&
-                        x.UserId ==
-                        status.UserId);
+                null;
 
-            /*
-             * Fallback nếu server chưa gửi UserId.
-             */
+            if (!string.IsNullOrWhiteSpace(
+                    status.UserId))
+            {
+                chat =
+                    Chats.FirstOrDefault(
+                        x =>
+                            x.UserId ==
+                            status.UserId);
+            }
+
             if (chat == null)
             {
                 chat =
@@ -510,16 +509,22 @@ namespace Client.Views
 
             if (Chats.Count > 0)
             {
-                EmptyIcon.Text =
-                    "🔎";
+                EmptyIconImage.Source =
+                    new BitmapImage(
+                        new Uri(
+                            "pack://application:,,,/Assets/Icon/icon_search.png",
+                            UriKind.Absolute));
 
                 EmptyMessage.Text =
                     "Không tìm thấy liên hệ";
             }
             else
             {
-                EmptyIcon.Text =
-                    "💬";
+                EmptyIconImage.Source =
+                    new BitmapImage(
+                        new Uri(
+                            "pack://application:,,,/Assets/Icon/icon_chat.png",
+                            UriKind.Absolute));
 
                 EmptyMessage.Text =
                     "Chưa có cuộc trò chuyện";

@@ -45,14 +45,15 @@
                     <Grid Width="52"
                           Height="52">
 
-                        <Ellipse Stroke="#80FFFFFF"
-                                 StrokeThickness="2">
+                        <Ellipse Fill="#DCEEFF"
+                                 Stroke="White"
+                                 StrokeThickness="2"/>
+
+                        <Ellipse>
 
                             <Ellipse.Fill>
-
                                 <ImageBrush x:Name="MyAvatarBrush"
                                             Stretch="UniformToFill"/>
-
                             </Ellipse.Fill>
 
                         </Ellipse>
@@ -65,17 +66,15 @@
 
                         <Border Width="18"
                                 Height="18"
-                                CornerRadius="9"
                                 Background="White"
+                                CornerRadius="9"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom">
 
-                            <TextBlock Text="✎"
-                                       FontSize="10"
-                                       FontWeight="Bold"
-                                       Foreground="#0A84FF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
+                            <Image Source="/Assets/Icon/icon_edit.png"
+                                   Width="11"
+                                   Height="11"
+                                   Stretch="Uniform"/>
 
                         </Border>
 
@@ -89,39 +88,56 @@
                             VerticalAlignment="Top"
                             Margin="0,20,0,0">
 
+                    <!-- CHAT -->
+
                     <Button Width="50"
                             Height="50"
                             Margin="0,5"
                             BorderThickness="0"
-                            Background="#30FFFFFF">
+                            Background="#30FFFFFF"
+                            Cursor="Hand"
+                            ToolTip="Chat">
 
-                        <TextBlock Text="💬"
-                                   FontSize="22"/>
+                        <Image Source="/Assets/Icon/icon_chat.png"
+                               Width="28"
+                               Height="28"
+                               Stretch="Uniform"/>
 
                     </Button>
 
+                    <!-- CONTACTS -->
+
                     <Button Width="50"
                             Height="50"
                             Margin="0,5"
                             BorderThickness="0"
-                            Background="Transparent">
+                            Background="Transparent"
+                            Cursor="Hand"
+                            ToolTip="Liên hệ">
 
-                        <TextBlock Text="👥"
-                                   FontSize="22"/>
+                        <Image Source="/Assets/Icon/icon_contacts.png"
+                               Width="28"
+                               Height="28"
+                               Stretch="Uniform"/>
 
                     </Button>
 
                 </StackPanel>
 
+                <!-- SETTINGS -->
+
                 <Button Grid.Row="2"
                         Width="50"
                         Height="50"
                         BorderThickness="0"
-                        Background="Transparent">
+                        Background="Transparent"
+                        Cursor="Hand"
+                        ToolTip="Cài đặt">
 
-                    <TextBlock Text="⚙"
-                               FontSize="24"
-                               Foreground="White"/>
+                    <Image Source="/Assets/Icon/icon_settings.png"
+                           Width="28"
+                           Height="28"
+                           Stretch="Uniform"/>
 
                 </Button>
 
@@ -148,16 +164,13 @@
 
                 <!-- HEADER -->
 
-                <Grid Grid.Row="0"
-                      Margin="18,0">
-
-                    <TextBlock Text="Danh sách chat"
-                               FontSize="21"
-                               FontWeight="Bold"
-                               Foreground="#111827"
-                               VerticalAlignment="Center"/>
-
-                </Grid>
+                <TextBlock Grid.Row="0"
+                           Text="Danh sách chat"
+                           Margin="18,0"
+                           VerticalAlignment="Center"
+                           FontSize="21"
+                           FontWeight="Bold"
+                           Foreground="#111827"/>
 
                 <!-- SEARCH -->
 
@@ -174,12 +187,13 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0"
-                                       Text="⌕"
-                                       FontSize="20"
-                                       Foreground="#9CA3AF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
+                            <Image Grid.Column="0"
+                                   Source="/Assets/Icon/icon_search.png"
+                                   Width="19"
+                                   Height="19"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
 
                             <TextBox x:Name="SearchTextBox"
                                      Grid.Column="1"
@@ -201,16 +215,17 @@
 
                 <Grid Grid.Row="2">
 
-                    <!-- EMPTY -->
+                    <!-- EMPTY STATE -->
 
                     <StackPanel x:Name="EmptyPanel"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
 
-                        <TextBlock x:Name="EmptyIcon"
-                                   Text="💬"
-                                   FontSize="52"
-                                   HorizontalAlignment="Center"/>
+                        <Image x:Name="EmptyIconImage"
+                               Source="/Assets/Icon/icon_chat.png"
+                               Width="52"
+                               Height="52"
+                               Stretch="Uniform"/>
 
                         <TextBlock x:Name="EmptyMessage"
                                    Text="Chưa có cuộc trò chuyện"
@@ -319,18 +334,21 @@
 
                                         <Ellipse Fill="#DCEEFF"/>
 
-                                        <Ellipse>
+                                        <!--
+                                        Không bind ImageBrush trực tiếp nữa
+                                        để tránh warning ImageSource khi AvatarPath null.
+                                        -->
 
-                                            <Ellipse.Fill>
+                                        <Border Width="46"
+                                                Height="46"
+                                                CornerRadius="23">
 
-                                                <ImageBrush ImageSource="{Binding AvatarPath}"
-                                                            Stretch="UniformToFill"/>
+                                            <Image Source="{Binding AvatarPath}"
+                                                   Stretch="UniformToFill"/>
 
-                                            </Ellipse.Fill>
+                                        </Border>
 
-                                        </Ellipse>
-
-                                        <!-- ONLINE DOT -->
+                                        <!-- ONLINE/OFFLINE -->
 
                                         <Ellipse Width="12"
                                                  Height="12"
@@ -366,7 +384,7 @@
 
                                     </Grid>
 
-                                    <!-- INFO -->
+                                    <!-- USER INFO -->
 
                                     <StackPanel Grid.Column="1"
                                                 VerticalAlignment="Center"
@@ -427,21 +445,22 @@
         </Border>
 
         <!-- ================================================= -->
-        <!-- CHAT VIEW AREA -->
+        <!-- CHAT AREA -->
         <!-- ================================================= -->
 
         <Grid Grid.Column="2"
               Background="#F5F7FA">
 
-            <!-- DEFAULT STATE -->
+            <!-- DEFAULT -->
 
             <StackPanel x:Name="NoChatSelectedPanel"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
 
-                <TextBlock Text="💬"
-                           FontSize="64"
-                           HorizontalAlignment="Center"/>
+                <Image Source="/Assets/Icon/icon_chat.png"
+                       Width="64"
+                       Height="64"
+                       Stretch="Uniform"/>
 
                 <TextBlock Text="Chọn một cuộc trò chuyện"
                            FontSize="19"
@@ -458,7 +477,7 @@
 
             </StackPanel>
 
-            <!-- CHAT VIEW ĐƯỢC LOAD VÀO ĐÂY -->
+            <!-- CHAT VIEW -->
 
             <ContentControl x:Name="ChatContentHost"/>
 

@@ -1,11 +1,13 @@
 using System;
 using System.ComponentModel;
+
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
 using ChatTCP.Client.Networking;
 using ChatTCP.Common.Models;
+
 using Client.Views;
 
 namespace ChatTCP.Client.Views
@@ -13,12 +15,22 @@ namespace ChatTCP.Client.Views
     public partial class ChatView : UserControl
     {
         private readonly ChatItem _selectedChat;
-        private readonly ClientSocketService? _socketService;
 
-        // Reply state ở ô nhập
-        private string? _currentReplyMsgId;
-        private string? _currentReplySenderName;
-        private string? _currentReplySnippet;
+        private readonly ClientSocketService?
+            _socketService;
+
+        // =====================================================
+        // CURRENT REPLY
+        // =====================================================
+
+        private string?
+            _currentReplyMsgId;
+
+        private string?
+            _currentReplySenderName;
+
+        private string?
+            _currentReplySnippet;
 
         // =====================================================
         // CONSTRUCTOR
@@ -30,10 +42,14 @@ namespace ChatTCP.Client.Views
         {
             InitializeComponent();
 
-            _selectedChat = selectedChat;
-            _socketService = socketService;
+            _selectedChat =
+                selectedChat;
 
-            DataContext = _selectedChat;
+            _socketService =
+                socketService;
+
+            DataContext =
+                _selectedChat;
 
             ChatUserNameText.Text =
                 _selectedChat.Name;
@@ -74,14 +90,22 @@ namespace ChatTCP.Client.Views
 
             ChatUserStatusText.Foreground =
                 _selectedChat.IsOnline
+
                     ? new SolidColorBrush(
-                        Color.FromRgb(34, 197, 94))
+                        Color.FromRgb(
+                            34,
+                            197,
+                            94))
+
                     : new SolidColorBrush(
-                        Color.FromRgb(156, 163, 175));
+                        Color.FromRgb(
+                            156,
+                            163,
+                            175));
         }
 
         // =====================================================
-        // CLICK ICON REPLY
+        // REPLY ICON
         // =====================================================
 
         private void ReplyIcon_Click(
@@ -96,28 +120,40 @@ namespace ChatTCP.Client.Views
             string? tag =
                 button.Tag as string;
 
-            if (string.IsNullOrWhiteSpace(tag))
+            if (string.IsNullOrWhiteSpace(
+                    tag))
             {
                 return;
             }
 
             string[] parts =
-                tag.Split('|', 3);
+                tag.Split(
+                    '|',
+                    3);
 
             if (parts.Length < 3)
             {
                 return;
             }
 
-            string msgId = parts[0];
-            string senderName = parts[1];
-            string content = parts[2];
+            string msgId =
+                parts[0];
+
+            string senderName =
+                parts[1];
+
+            string content =
+                parts[2];
 
             StartReply(
                 msgId,
                 senderName,
                 content);
         }
+
+        // =====================================================
+        // START REPLY
+        // =====================================================
 
         private void StartReply(
             string msgId,
@@ -128,12 +164,16 @@ namespace ChatTCP.Client.Views
                 msgId;
 
             _currentReplySenderName =
-                string.IsNullOrWhiteSpace(senderName)
+                string.IsNullOrWhiteSpace(
+                    senderName)
+
                     ? "Tin nhắn được trả lời"
+
                     : senderName;
 
             _currentReplySnippet =
-                GetSnippet(contentSnippet);
+                GetSnippet(
+                    contentSnippet);
 
             ReplyComposerSenderText.Text =
                 _currentReplySenderName;
@@ -147,6 +187,10 @@ namespace ChatTCP.Client.Views
             MessageInputBox.Focus();
         }
 
+        // =====================================================
+        // CANCEL REPLY
+        // =====================================================
+
         private void CancelReplyButton_Click(
             object sender,
             RoutedEventArgs e)
@@ -156,9 +200,14 @@ namespace ChatTCP.Client.Views
 
         private void ClearReplySelection()
         {
-            _currentReplyMsgId = null;
-            _currentReplySenderName = null;
-            _currentReplySnippet = null;
+            _currentReplyMsgId =
+                null;
+
+            _currentReplySenderName =
+                null;
+
+            _currentReplySnippet =
+                null;
 
             ReplyComposerBorder.Visibility =
                 Visibility.Collapsed;
@@ -170,10 +219,15 @@ namespace ChatTCP.Client.Views
                 string.Empty;
         }
 
+        // =====================================================
+        // SNIPPET
+        // =====================================================
+
         private static string GetSnippet(
             string? text)
         {
-            if (string.IsNullOrWhiteSpace(text))
+            if (string.IsNullOrWhiteSpace(
+                    text))
             {
                 return "Tin nhắn được trả lời";
             }
@@ -186,11 +240,14 @@ namespace ChatTCP.Client.Views
                 return cleaned;
             }
 
-            return cleaned.Substring(0, 60) + "...";
+            return cleaned.Substring(
+                       0,
+                       60)
+                   + "...";
         }
 
         // =====================================================
-        // SEND MESSAGE
+        // SEND
         // =====================================================
 
         private void SendButton_Click(
@@ -200,33 +257,47 @@ namespace ChatTCP.Client.Views
             string content =
                 MessageInputBox.Text.Trim();
 
-            if (string.IsNullOrWhiteSpace(content))
+            if (string.IsNullOrWhiteSpace(
+                    content))
             {
                 return;
             }
 
             /*
-             * Nếu sau này nối TCP thật:
+             * Sau này khi nối TCP thật:
              *
-             * var replyInfo = _currentReplyMsgId == null
-             *     ? null
-             *     : new ReplyInfo
+             * ReplyInfo? replyInfo = null;
+             *
+             * if (_currentReplyMsgId != null)
+             * {
+             *     replyInfo = new ReplyInfo
              *     {
              *         MsgId = _currentReplyMsgId,
-             *         SenderName = _currentReplySenderName ?? "",
-             *         ContentSnippet = _currentReplySnippet ?? ""
+             *         SenderName =
+             *             _currentReplySenderName ?? "",
+             *         ContentSnippet =
+             *             _currentReplySnippet ?? ""
              *     };
+             * }
              *
-             * Rồi gán replyInfo vào ChatMessageData trước khi gửi.
+             * var data = new ChatMessageData
+             * {
+             *     ...
+             *     ReplyTo = replyInfo
+             * };
+             *
+             * await _socketService.SendChatMessageAsync(data);
              */
 
             MessageInputBox.Clear();
+
             ClearReplySelection();
+
             MessageInputBox.Focus();
         }
 
         // =====================================================
-        // HIỂN THỊ REPLY PREVIEW CHO MESSAGE ĐÃ GỬI
+        // EXISTING REPLY PREVIEW
         // =====================================================
 
         public void DisplayReplyPreview(
@@ -237,33 +308,50 @@ namespace ChatTCP.Client.Views
             {
                 ReplyPreviewBorder.Visibility =
                     Visibility.Collapsed;
+
                 return;
             }
 
             ReplyPreviewBorder.Visibility =
                 Visibility.Visible;
 
+            // =================================================
+            // ORIGINAL MESSAGE DELETED / NOT FOUND
+            // =================================================
+
             if (reply == null)
             {
                 ShowDeletedReply();
+
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(reply.MsgId))
+            if (string.IsNullOrWhiteSpace(
+                    reply.MsgId))
             {
                 ShowDeletedReply();
+
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(reply.ContentSnippet))
+            if (string.IsNullOrWhiteSpace(
+                    reply.ContentSnippet))
             {
                 ShowDeletedReply();
+
                 return;
             }
+
+            // =================================================
+            // ORIGINAL MESSAGE EXISTS
+            // =================================================
 
             ReplySenderText.Text =
-                string.IsNullOrWhiteSpace(reply.SenderName)
+                string.IsNullOrWhiteSpace(
+                    reply.SenderName)
+
                     ? "Tin nhắn được trả lời"
+
                     : reply.SenderName;
 
             ReplyContentText.Text =
@@ -276,6 +364,10 @@ namespace ChatTCP.Client.Views
                 1;
         }
 
+        // =====================================================
+        // SAFE MESSAGE WRAPPER
+        // =====================================================
+
         public void DisplayMessageReplyPreview(
             ChatMessageData? message,
             bool hasReplyReference)
@@ -284,6 +376,10 @@ namespace ChatTCP.Client.Views
                 message?.ReplyTo,
                 hasReplyReference);
         }
+
+        // =====================================================
+        // DELETED REPLY
+        // =====================================================
 
         private void ShowDeletedReply()
         {
@@ -308,9 +404,12 @@ namespace ChatTCP.Client.Views
             object sender,
             RoutedEventArgs e)
         {
-            MessageInputBox.Text += "😀";
+            MessageInputBox.Text +=
+                "😀";
+
             MessageInputBox.CaretIndex =
                 MessageInputBox.Text.Length;
+
             MessageInputBox.Focus();
         }
 
