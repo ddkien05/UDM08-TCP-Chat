@@ -61,9 +61,10 @@ public class ReplyInfo
 /// </summary>
 public class ChatMessageData
 {
-    [JsonPropertyName("msg_id")] public string MsgId { get; set; } = string.Empty;
+    [JsonPropertyName("msg_id")] public string MsgId { get; set; } = Guid.NewGuid().ToString("N");
     [JsonPropertyName("target_type")] public string TargetType { get; set; } = "PRIVATE";
     [JsonPropertyName("target_id")] public string TargetId { get; set; } = string.Empty;
+    [JsonPropertyName("target_ids")] public List<string>? TargetIds { get; set; }
     [JsonPropertyName("sender")] public SenderInfo Sender { get; set; } = new();
     [JsonPropertyName("content")] public string Content { get; set; } = string.Empty;
     [JsonPropertyName("reply_to")] public ReplyInfo? ReplyTo { get; set; }
