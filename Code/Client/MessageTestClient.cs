@@ -84,26 +84,35 @@ class MessageTestClient
         await Task.Delay(300);
         while (true)
         {
-            Console.Write("\nTo UserID: ");
-            string? to = Console.ReadLine()?.Trim();
-            if (string.IsNullOrEmpty(to)) continue;
+            // Cho phép nhập 1 người hoặc nhiều người (vd: 2, 3, 4)
+            Console.Write("\nTo UserID(s): ");
+            string? toInput = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(toInput)) continue;
 
             Console.Write("Content: ");
             string? txt = Console.ReadLine();
             if (string.IsNullOrEmpty(txt)) continue;
+
+            // Tách chuỗi thành danh sách các UserID
+            var targetList = toInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
 
             var chatPacket = new Packet<ChatMessageData>
             {
                 Type = "CHAT_MSG",
                 Seq = 100,
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Data = new()
+                Data = new ChatMessageData
                 {
                     MsgId = Guid.NewGuid().ToString("N"),
-                    TargetType = "PRIVATE",
-                    TargetId = to,
-                    Sender = new() { UserId = userId, DisplayName = name },
-                    Content = txt
+                    Sender = new SenderInfo { UserId = userId, DisplayName = name },
+                    Content = txt,
+
+                    // 1 người --> Dùng TargetId bình thường
+                    // Từ 2 người trở lên --> Gán vào danh sách TargetIds để Forward
+                    TargetType = targetList.Count > 1 ? "FORWARD_MULTIPLE" : "PRIVATE",
+                    TargetId = targetList.Count == 1 ? targetList[0] : string.Empty,
+                    TargetIds = targetList.Count > 1 ? targetList : null,
+                    IsForwarded = targetList.Count > 1
                 }
             };
 
