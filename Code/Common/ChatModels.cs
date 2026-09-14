@@ -14,6 +14,28 @@ public class Packet<T>
 }
 
 /// <summary>
+/// Dữ liệu gửi từ client đến server để xác thực người dùng.
+/// </summary>
+public class AuthRequestData
+{
+    [JsonPropertyName("username")] public string Username { get; set; } = string.Empty;
+    [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
+    [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
+}
+
+/// <summary>
+/// Dữ liệu trả về từ server sau khi xác thực thành công.
+/// </summary>
+public class AuthResponseData
+{
+    [JsonPropertyName("code")] public int Code { get; set; }
+    [JsonPropertyName("message")] public string Message { get; set; } = string.Empty;
+    [JsonPropertyName("user_id")] public string UserId { get; set; } = string.Empty;
+    [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
+    [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
+}
+
+/// <summary>
 /// Thông tin người gửi trong một tin nhắn.
 /// </summary>
 public class SenderInfo
@@ -46,6 +68,17 @@ public class ChatMessageData
     [JsonPropertyName("reply_to")] public ReplyInfo? ReplyTo { get; set; }
     [JsonPropertyName("is_forwarded")] public bool IsForwarded { get; set; }
     [JsonPropertyName("forward_from_name")] public string? ForwardFromName { get; set; }
+}
+
+/// <summary>
+/// Dữ liệu thông báo trạng thái người dùng (online/offline) từ server.
+/// </summary>
+public class UserStatusNotifyData
+{
+    [JsonPropertyName("user_id")] public string UserId { get; set; } = string.Empty;
+    [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
+    [JsonPropertyName("status")] public string Status { get; set; } = "ONLINE"; // "ONLINE" hoặc "OFFLINE"
+    [JsonPropertyName("last_seen")] public long LastSeen { get; set; }
 }
 
 /// <summary>

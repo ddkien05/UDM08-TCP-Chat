@@ -16,7 +16,7 @@ class MessageTestServer
     static async Task Main()
     {
         Console.OutputEncoding = Encoding.UTF8;
-        int port = 9000;
+        int port = 8888;
 
         var router = new MessageRouter(_clients);
         var listener = new TcpListener(IPAddress.Any, port);

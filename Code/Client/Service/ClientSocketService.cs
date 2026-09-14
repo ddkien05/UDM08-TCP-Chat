@@ -37,7 +37,12 @@ namespace ChatTCP.Client.Networking
         private CancellationTokenSource? _cts;
         private readonly Dispatcher? _dispatcher;
 
+<<<<<<< HEAD
         public ClientSocketService(Dispatcher? dispatcher = null) {
+=======
+        public ClientSocketService(Dispatcher? dispatcher = null)
+        {
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             _dispatcher = dispatcher;
         }
 
@@ -146,19 +151,24 @@ namespace ChatTCP.Client.Networking
             {
                 _cts?.Cancel();
             }
-            catch { }
+            catch
+            {
+            }
 
             try
             {
                 _stream?.Close();
                 _client?.Close();
             }
-            catch { }
+            catch
+            {
+            }
             finally
             {
                 _stream = null;
                 _client = null;
                 _cts = null;
+
                 InvokeOnUI(() => OnDisconnected?.Invoke());
             }
         }
@@ -181,7 +191,10 @@ namespace ChatTCP.Client.Networking
         /// <returns>Task hoàn thành khi gói tin đã ghi xong vào stream</returns>
         public async Task SendPacketAsync<T>(Packet<T> packet)
         {
-            if (!IsConnected || _stream == null) throw new InvalidOperationException("Not connected");
+            if (!IsConnected || _stream == null)
+            {
+                throw new InvalidOperationException("Not connected");
+            }
 
             try
             {
@@ -190,7 +203,12 @@ namespace ChatTCP.Client.Networking
             catch (Exception ex)
             {
                 RaiseError($"Send error: {ex.Message}");
+<<<<<<< HEAD
                 // Handle as disconnection
+=======
+
+                // Xử lý như đã mất kết nối
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
                 Disconnect();
             }
         }
@@ -241,27 +259,44 @@ namespace ChatTCP.Client.Networking
         /// <param name="token">Cancellation token để có thể ngắt vòng lặp nhận</param>
         private async Task ReceiveLoopAsync(CancellationToken token)
         {
-            if (_stream == null) return;
+            if (_stream == null)
+            {
+                return;
+            }
 
             try
             {
                 while (!token.IsCancellationRequested)
                 {
-                    string? raw = await MessageProtocol.ReceiveRawJsonAsync(_stream);
-                    if (raw == null) break;
+                    string? raw =
+                        await MessageProtocol.ReceiveRawJsonAsync(_stream);
+
+                    if (raw == null)
+                    {
+                        break;
+                    }
 
                     Packet<JsonElement>? basePacket = null;
+
                     try
                     {
-                        basePacket = JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
+                        basePacket =
+                            JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
                     }
-                    catch (Exception) { /* ignore malformed */ }
+                    catch
+                    {
+                        // Bỏ qua packet JSON không hợp lệ
+                    }
 
-                    if (basePacket == null) continue;
+                    if (basePacket == null)
+                    {
+                        continue;
+                    }
 
                     // Route packet based on type
                     switch (basePacket.Type)
                     {
+<<<<<<< HEAD
                         case "CHAT_MSG":
                             HandleChatMessage(raw);
                             break;
@@ -282,12 +317,47 @@ namespace ChatTCP.Client.Networking
                         default:
                             // Future packet types can be added here
                             break;
+=======
+                        try
+                        {
+                            var chatPacket =
+                                JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
+
+                            if (chatPacket != null)
+                            {
+                                InvokeOnUI(() =>
+                                    OnChatMessageReceived?.Invoke(chatPacket));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            RaiseError(
+                                $"Receive parse error: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        // Có thể mở rộng xử lý:
+                        // LOGIN_RES
+                        // REGISTER_RES
+                        // CONTACT_LIST_RES
+                        // USER_SEARCH_RES
+                        // AVATAR_RES
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Disconnect() chủ động thì có thể đi vào đây.
+            }
             catch (Exception ex)
             {
-                RaiseError($"Receive loop error: {ex.Message}");
+                if (!token.IsCancellationRequested)
+                {
+                    RaiseError(
+                        $"Receive loop error: {ex.Message}");
+                }
             }
             finally
             {
@@ -370,16 +440,33 @@ namespace ChatTCP.Client.Networking
                 try
                 {
                     if (_dispatcher.CheckAccess())
+                    {
                         action();
+                    }
                     else
+                    {
                         _dispatcher.BeginInvoke(action);
+                    }
                 }
-                catch { /* swallow to avoid UI crash */ }
+                catch
+                {
+                    // Không để lỗi Dispatcher làm crash UI
+                }
             }
             else
             {
+<<<<<<< HEAD
                 // No Dispatcher, execute on threadpool
                 try { Task.Run(action); } catch { }
+=======
+                try
+                {
+                    Task.Run(action);
+                }
+                catch
+                {
+                }
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             }
         }
 
@@ -390,7 +477,8 @@ namespace ChatTCP.Client.Networking
         /// <param name="message">Error message to report</param>
         private void RaiseError(string message)
         {
-            InvokeOnUI(() => OnError?.Invoke(message));
+            InvokeOnUI(() =>
+                OnError?.Invoke(message));
         }
     }
 }

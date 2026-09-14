@@ -1,7 +1,10 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+<<<<<<< HEAD
 using System.Windows.Xps;
+=======
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
 using ChatTCP.Client.Networking;
 
 namespace ChatTCP.Client.Views
@@ -16,12 +19,21 @@ namespace ChatTCP.Client.Views
         public LoginView()
         {
             InitializeComponent();
+<<<<<<< HEAD
             _socketService = new ClientSocketService(Dispatcher);
             _socketService.OnError += ShowError;
+=======
+
+            _socketService =
+                new ClientSocketService(Dispatcher);
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
         }
 
-        private async void LoginButton_Click(object sender, RoutedEventArgs e)
+        private async void LoginButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
+<<<<<<< HEAD
             string username = UsernameTextBox.Text.Trim();
             string password = PasswordBox.Password;
 
@@ -51,14 +63,23 @@ namespace ChatTCP.Client.Views
 
             ErrorText.Visibility = Visibility.Collapsed;
 
+=======
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             try
             {
-                // Tạm khóa nút để tránh người dùng bấm nhiều lần
-                if (sender is Button loginButton)
+                bool connected =
+                    await _socketService.ConnectAsync(
+                        "127.0.0.1",
+                        8888);
+
+                if (connected)
                 {
-                    loginButton.IsEnabled = false;
-                    loginButton.Content = "Đang kết nối...";
+                    MessageBox.Show(
+                        "Kết nối Server thành công.");
+
+                    LoginSucceeded?.Invoke();
                 }
+<<<<<<< HEAD
 
                 bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
 
@@ -70,11 +91,19 @@ namespace ChatTCP.Client.Views
                 }
 
                 LoginSucceeded?.Invoke();
+=======
+                else
+                {
+                    MessageBox.Show(
+                        "Không thể kết nối Server.");
+                }
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             }
             catch (Exception ex)
             {
-                ShowError("Lỗi kết nối: " + ex.Message);
+                MessageBox.Show(ex.Message);
             }
+<<<<<<< HEAD
             finally
             {
                 if (sender is Button loginButton)
@@ -95,7 +124,8 @@ namespace ChatTCP.Client.Views
         {
             ErrorText.Text = message;
             ErrorText.Visibility = Visibility.Visible;
+=======
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
         }
     }
 }
-
