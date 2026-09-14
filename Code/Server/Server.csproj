@@ -9,12 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\database.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\Schema.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- SQL schema files intentionally excluded from build-time validation to avoid SSDT parsing errors. They will be loaded at runtime by DbConnectionFactory if present in output. -->
   </ItemGroup>
 
   <PropertyGroup>

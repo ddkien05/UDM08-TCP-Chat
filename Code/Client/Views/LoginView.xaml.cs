@@ -1,25 +1,39 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
-using Client.Services;
+<<<<<<< HEAD
+using System.Windows.Xps;
+=======
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
+using ChatTCP.Client.Networking;
 
-namespace Client.Views
+namespace ChatTCP.Client.Views
 {
     public partial class LoginView : UserControl
     {
         private readonly ClientSocketService _socketService;
 
         public event Action? LoginSucceeded;
+        public event Action? RegisterRequested;
 
         public LoginView()
         {
             InitializeComponent();
+<<<<<<< HEAD
+            _socketService = new ClientSocketService(Dispatcher);
+            _socketService.OnError += ShowError;
+=======
 
-            _socketService = new ClientSocketService();
+            _socketService =
+                new ClientSocketService(Dispatcher);
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
         }
 
-        private async void LoginButton_Click(object sender, RoutedEventArgs e)
+        private async void LoginButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
+<<<<<<< HEAD
             string username = UsernameTextBox.Text.Trim();
             string password = PasswordBox.Password;
 
@@ -35,42 +49,61 @@ namespace Client.Views
                 return;
             }
 
+            string serverIp = ServerIpTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(serverIp))
+            {
+                serverIp = "127.0.0.1";
+            }
+
+            if (!int.TryParse(PortTextBox.Text.Trim(), out int port))
+            {
+                ShowError("Cổng (Port) không hợp lệ. Vui lòng nhập số.");
+                return;
+            }
+
             ErrorText.Visibility = Visibility.Collapsed;
 
+=======
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             try
             {
-                // Tạm khóa nút để tránh người dùng bấm nhiều lần
-                if (sender is Button loginButton)
+                bool connected =
+                    await _socketService.ConnectAsync(
+                        "127.0.0.1",
+                        8888);
+
+                if (connected)
                 {
-                    loginButton.IsEnabled = false;
-                    loginButton.Content = "Đang kết nối...";
+                    MessageBox.Show(
+                        "Kết nối Server thành công.");
+
+                    LoginSucceeded?.Invoke();
                 }
+<<<<<<< HEAD
 
-                bool connected = await _socketService.ConnectAsync(
-                    "127.0.0.1",
-                    9000
-                );
+                bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
 
-                if (!connected)
+                if (!loginSuccess)
                 {
-                    ShowError("Không thể kết nối tới Server.");
-
+                    // Lỗi đã được hiển thị qua sự kiện OnError của ClientSocketService,
+                    // Nhưng ta có thể để LoginSucceeded không được gọi.
                     return;
                 }
 
-                // QUAN TRỌNG:
-                // Hiện server nhánh dev mới chỉ nhận TCP connection.
-                // Username/password CHƯA được server xác thực.
-                //
-                // Sau khi server có AUTH_REQ / AUTH_RES,
-                // phần xác thực thật sẽ được thêm tại đây.
-
                 LoginSucceeded?.Invoke();
+=======
+                else
+                {
+                    MessageBox.Show(
+                        "Không thể kết nối Server.");
+                }
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             }
             catch (Exception ex)
             {
-                ShowError("Lỗi kết nối: " + ex.Message);
+                MessageBox.Show(ex.Message);
             }
+<<<<<<< HEAD
             finally
             {
                 if (sender is Button loginButton)
@@ -81,11 +114,18 @@ namespace Client.Views
             }
         }
 
+        private void RegisterNavButton_Click(object sender, RoutedEventArgs e)
+        {
+            RegisterRequested?.Invoke();
+        }
+
+
         private void ShowError(string message)
         {
             ErrorText.Text = message;
             ErrorText.Visibility = Visibility.Visible;
+=======
+>>>>>>> f87406ee404b767d41992a84972afdc0635611fc
         }
     }
 }
-
