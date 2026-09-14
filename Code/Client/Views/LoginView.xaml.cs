@@ -16,8 +16,8 @@ namespace ChatTCP.Client.Views
         public LoginView()
         {
             InitializeComponent();
-
             _socketService = new ClientSocketService(Dispatcher);
+            _socketService.OnError += ShowError;
         }
 
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -60,20 +60,14 @@ namespace ChatTCP.Client.Views
                     loginButton.Content = "Đang kết nối...";
                 }
 
-                bool connected = await _socketService.ConnectAsync(serverIp, port);
+                bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
 
-                if (!connected)
+                if (!loginSuccess)
                 {
-                    ShowError("Không thể kết nối tới Server.");
+                    // Lỗi đã được hiển thị qua sự kiện OnError của ClientSocketService,
+                    // Nhưng ta có thể để LoginSucceeded không được gọi.
                     return;
                 }
-
-                // QUAN TRỌNG:
-                // Hiện server nhánh dev mới chỉ nhận TCP connection.
-                // Username/password CHƯA được server xác thực.
-                //
-                // Sau khi server có AUTH_REQ / AUTH_RES,
-                // phần xác thực thật sẽ được thêm tại đây.
 
                 LoginSucceeded?.Invoke();
             }

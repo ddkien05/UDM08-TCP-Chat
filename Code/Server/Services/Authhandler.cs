@@ -1,7 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
 
@@ -18,63 +21,76 @@ namespace ChatTCP.Server.Services
             _clientManager = clientManager;
         }
 
-        /// Đọc 1 dòng lệnh LOGIN/REGISTER từ client và xử lý. Bọc try-catch để 1 client lỗi không làm chết server.
-        public void Handle(TcpClient client)
+        public async Task HandleAsync(TcpClient client)
         {
             try
             {
                 NetworkStream stream = client.GetStream();
-                StreamReader reader = new StreamReader(stream, Encoding.UTF8);
-                StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
 
-                string line = reader.ReadLine(); // đứng chờ tới khi client gửi lệnh
-                if (string.IsNullOrEmpty(line))
+                string rawJson = await MessageProtocol.ReceiveRawJsonAsync(stream);
+                if (string.IsNullOrEmpty(rawJson))
                 {
                     client.Close();
                     return;
                 }
 
-                string[] parts = line.Split(';');
-                string command = parts[0].Trim().ToUpper();
-
-                if (command == "REGISTER" && parts.Length == 4)
+                var packet = JsonSerializer.Deserialize<Packet<JsonElement>>(rawJson);
+                if (packet == null)
                 {
-                    HandleRegister(client, writer, parts[1], parts[2], parts[3]);
+                    await SendAuthResAsync(stream, 400, "Invalid packet");
+                    client.Close();
+                    return;
                 }
-                else if (command == "LOGIN" && parts.Length == 3)
+
+                if (packet.Type == "REGISTER_REQ")
                 {
-                    HandleLogin(client, writer, parts[1], parts[2]);
+                    string username = packet.Data.GetProperty("username").GetString() ?? "";
+                    string password = packet.Data.GetProperty("password").GetString() ?? "";
+                    string displayName = packet.Data.TryGetProperty("display_name", out var dn) ? dn.GetString() : username;
+                    
+                    await HandleRegisterAsync(client, stream, username, password, displayName);
+                }
+                else if (packet.Type == "LOGIN_REQ" || packet.Type == "AUTH_REQ")
+                {
+                    string username = packet.Data.GetProperty("username").GetString() ?? "";
+                    string password = packet.Data.GetProperty("password").GetString() ?? "";
+                    
+                    await HandleLoginAsync(client, stream, username, password);
                 }
                 else
                 {
-                    writer.WriteLine("FAIL;Lệnh không hợp lệ");
+                    await SendAuthResAsync(stream, 400, "Lệnh không hợp lệ");
                     client.Close();
                 }
             }
             catch (Exception ex)
             {
-                // lưới an toàn cuối cùng — không để lỗi từ 1 client làm sập cả server
                 Console.WriteLine("[AuthHandler] Lỗi không mong muốn: " + ex.Message);
                 client.Close();
             }
         }
 
-        ///Xử lý đăng ký: kiểm tra trùng Username rồi gọi UserRepository tạo user mới.
-        private void HandleRegister(TcpClient client, StreamWriter writer,
-                                     string username, string password, string displayName)
+        private async Task HandleRegisterAsync(TcpClient client, NetworkStream stream, string username, string password, string displayName)
         {
             try
             {
-                if (_userRepository.GetByUsername(username) != null)
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
-                    writer.WriteLine("FAIL;Username đã tồn tại");
+                    await SendAuthResAsync(stream, 400, "Username và password không được để trống");
                     client.Close();
                     return;
                 }
 
-                // Lưu ý: đang lưu password thô cho đơn giản, chưa băm (hash).
+                if (_userRepository.GetByUsername(username) != null)
+                {
+                    await SendAuthResAsync(stream, 400, "Username đã tồn tại");
+                    client.Close();
+                    return;
+                }
+
                 int userId = _userRepository.CreateUser(username, password, displayName);
-                writer.WriteLine("OK;" + userId);
+                
+                await SendAuthResAsync(stream, 200, "Success", userId);
 
                 _clientManager.Add(new ClientSession
                 {
@@ -87,13 +103,12 @@ namespace ChatTCP.Server.Services
             catch (Exception ex)
             {
                 Console.WriteLine("[AuthHandler] Lỗi khi Register: " + ex.Message);
-                writer.WriteLine("FAIL;Lỗi hệ thống, thử lại sau");
+                await SendAuthResAsync(stream, 500, "Lỗi hệ thống, thử lại sau");
                 client.Close();
             }
         }
 
-        ///Xử lý đăng nhập: kiểm tra Username/Password qua UserRepository
-        private void HandleLogin(TcpClient client, StreamWriter writer, string username, string password)
+        private async Task HandleLoginAsync(TcpClient client, NetworkStream stream, string username, string password)
         {
             try
             {
@@ -101,12 +116,12 @@ namespace ChatTCP.Server.Services
 
                 if (user == null || user.PasswordHash != password)
                 {
-                    writer.WriteLine("FAIL;Sai tài khoản hoặc mật khẩu");
+                    await SendAuthResAsync(stream, 401, "Sai tài khoản hoặc mật khẩu");
                     client.Close();
                     return;
                 }
 
-                writer.WriteLine("OK;" + user.UserId);
+                await SendAuthResAsync(stream, 200, "Success", user.UserId);
 
                 _clientManager.Add(new ClientSession
                 {
@@ -119,9 +134,25 @@ namespace ChatTCP.Server.Services
             catch (Exception ex)
             {
                 Console.WriteLine("[AuthHandler] Lỗi khi Login: " + ex.Message);
-                writer.WriteLine("FAIL;Lỗi hệ thống, thử lại sau");
+                await SendAuthResAsync(stream, 500, "Lỗi hệ thống, thử lại sau");
                 client.Close();
             }
+        }
+
+        private async Task SendAuthResAsync(NetworkStream stream, int code, string message, int? userId = null)
+        {
+            var res = new Packet<object>
+            {
+                Type = "AUTH_RES",
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Data = new
+                {
+                    code = code,
+                    message = message,
+                    user_id = userId
+                }
+            };
+            await MessageProtocol.SendPacketAsync(stream, res);
         }
     }
 }

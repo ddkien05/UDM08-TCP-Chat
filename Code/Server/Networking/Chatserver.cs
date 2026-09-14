@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -69,21 +69,18 @@ namespace ChatTCP.Server.Networking
                     string ip = newClient.Client.RemoteEndPoint.ToString();
                     Console.WriteLine("[ChatServer] Có client mới kết nối: " + ip + " — đang chờ Login/Register...");
 
-                    // Xử lý Login/Register trên Thread riêng, để không làm chậm việc Accept client tiếp theo.
-                    // Bọc try-catch quanh Thread vì exception rơi ra ngoài Thread nền sẽ làm crash cả server.
-                    Thread authThread = new Thread(() =>
+                    // Xử lý Login/Register trên Task riêng
+                    Task.Run(async () =>
                     {
                         try
                         {
-                            _authHandler.Handle(newClient);
+                            await _authHandler.HandleAsync(newClient);
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine("[ChatServer] Lỗi không mong muốn khi xử lý client: " + ex.Message);
                         }
                     });
-                    authThread.IsBackground = true;
-                    authThread.Start();
 
                     // TODO: sau khi login thành công, module đọc tin nhắn liên tục (Khương)
                     // sẽ dùng ChatServer.ReadFrame(stream) để xử lý ranh giới message.

@@ -80,7 +80,7 @@ namespace ChatTCP.Client.Networking
         /// <param name="host">Server IP address (default: localhost)</param>
         /// <param name="port">Server TCP port (default: 9000)</param>
         /// <returns>True if connection successful, false if failed</returns>
-        public async Task<bool> ConnectAsync(string host = "127.0.0.1", int port = 9000)
+        public async Task<bool> LoginAsync(string host, int port, string username, string password)
         {
             try
             {
@@ -90,6 +90,39 @@ namespace ChatTCP.Client.Networking
                 await _client.ConnectAsync(host, port);
                 _stream = _client.GetStream();
 
+                // Gửi yêu cầu đăng nhập
+                var loginPacket = new Packet<object>
+                {
+                    Type = "LOGIN_REQ",
+                    Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                    Data = new { username = username, password = password }
+                };
+                await MessageProtocol.SendPacketAsync(_stream, loginPacket);
+
+                // Đợi phản hồi
+                string? rawRes = await MessageProtocol.ReceiveRawJsonAsync(_stream);
+                if (string.IsNullOrEmpty(rawRes))
+                {
+                    throw new Exception("Không nhận được phản hồi từ Server.");
+                }
+
+                var resPacket = JsonSerializer.Deserialize<Packet<JsonElement>>(rawRes);
+                if (resPacket == null || resPacket.Type != "AUTH_RES")
+                {
+                    throw new Exception("Phản hồi không hợp lệ từ Server.");
+                }
+
+                int code = resPacket.Data.GetProperty("code").GetInt32();
+                string message = resPacket.Data.GetProperty("message").GetString() ?? "Lỗi không xác định";
+
+                if (code != 200)
+                {
+                    RaiseError(message);
+                    Disconnect();
+                    return false;
+                }
+
+                // Nếu thành công, bắt đầu vòng lặp nhận tin nhắn
                 _cts = new CancellationTokenSource();
                 _ = Task.Run(() => ReceiveLoopAsync(_cts.Token));
 
@@ -98,7 +131,7 @@ namespace ChatTCP.Client.Networking
             catch (Exception ex)
             {
                 Disconnect();
-                RaiseError($"Connect error: {ex.Message}");
+                RaiseError(ex.Message);
                 return false;
             }
         }
