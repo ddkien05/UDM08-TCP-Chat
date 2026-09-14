@@ -4,41 +4,67 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+
 using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
 
 namespace ChatTCP.Client.Networking
 {
-    /// <summary>
-    /// Trợ giúp socket phía client cho ứng dụng có giao diện (UI).
-    /// Xử lý kết nối/đóng kết nối, gửi và vòng lặp nhận dữ liệu chạy nền.
-    /// Phát các sự kiện trên Dispatcher được cung cấp (nếu có)
-    /// để người đăng ký có thể cập nhật UI an toàn.
-    /// </summary>
     public class ClientSocketService
     {
         private TcpClient? _client;
+
         private NetworkStream? _stream;
-        private CancellationTokenSource? _cts;
-        private readonly Dispatcher? _dispatcher;
 
-        public ClientSocketService(Dispatcher? dispatcher = null)
-        {
-            _dispatcher = dispatcher;
-        }
+        private CancellationTokenSource?
+            _cts;
 
-        public bool IsConnected =>
-            _client != null && _client.Connected && _stream != null;
+        private readonly Dispatcher?
+            _dispatcher;
 
-        
+        private readonly SemaphoreSlim
+            _sendLock =
+                new(
+                    1,
+                    1);
+
+        private int _seq;
+
+        // =====================================================
         // EVENTS
-        
+        // =====================================================
 
-        public event Action<Packet<ChatMessageData>>?
-            OnChatMessageReceived;
+        public event Action<
+            Packet<LoginResponseData>>?
+            OnLoginResponse;
 
-        public event Action<Packet<UserStatusNotifyData>>?
+        public event Action<
+            Packet<OnlineUsersData>>?
+            OnOnlineUsersReceived;
+
+        public event Action<
+            Packet<ConversationListData>>?
+            OnConversationListReceived;
+
+        public event Action<
+            Packet<ConversationHistoryData>>?
+            OnConversationHistoryReceived;
+
+        public event Action<
+            Packet<UserStatusNotifyData>>?
             OnUserStatusChanged;
+
+        public event Action<
+            Packet<UserProfileNotifyData>>?
+            OnUserProfileChanged;
+
+        public event Action<
+            Packet<AvatarUpdateResponseData>>?
+            OnAvatarUpdated;
+
+        public event Action<
+            Packet<ChatMessageData>>?
+            OnChatMessageReceived;
 
         public event Action<string>?
             OnError;
@@ -46,132 +72,239 @@ namespace ChatTCP.Client.Networking
         public event Action?
             OnDisconnected;
 
-        
+        public ClientSocketService(
+            Dispatcher? dispatcher = null)
+        {
+            _dispatcher =
+                dispatcher;
+        }
+
+        public bool IsConnected =>
+            _client != null
+            &&
+            _client.Connected
+            &&
+            _stream != null;
+
+        // =====================================================
         // CONNECT
-        
+        // =====================================================
 
         public async Task<bool> ConnectAsync(
             string host = "127.0.0.1",
             int port = 8888)
         {
+            if (IsConnected)
+            {
+                return true;
+            }
+
             try
             {
-                Disconnect();
-
-                _client = new TcpClient();
+                _client =
+                    new TcpClient();
 
                 await _client.ConnectAsync(
                     host,
                     port);
 
-                _stream = _client.GetStream();
+                _stream =
+                    _client.GetStream();
 
-                _cts = new CancellationTokenSource();
+                _cts =
+                    new CancellationTokenSource();
 
-                _ = Task.Run(
-                    () => ReceiveLoopAsync(_cts.Token));
+                _ =
+                    Task.Run(
+                        () =>
+                            ReceiveLoopAsync(
+                                _cts.Token));
 
                 return true;
             }
             catch (Exception ex)
             {
-                Disconnect();
-
                 RaiseError(
-                    $"Connect error: {ex.Message}");
+                    "Không thể kết nối server: "
+                    + ex.Message);
+
+                Disconnect();
 
                 return false;
             }
         }
 
-        
-        // DISCONNECT
-        
+        // =====================================================
+        // REQUESTS
+        // =====================================================
 
-        public void Disconnect()
+        public Task LoginAsync(
+            string username,
+            string password)
         {
-            try
+            return SendPacketAsync(
+                new Packet<LoginRequestData>
+                {
+                    Type =
+                        "LOGIN_REQ",
+
+                    Seq =
+                        NextSeq(),
+
+                    Timestamp =
+                        UnixNow(),
+
+                    Data =
+                        new LoginRequestData
+                        {
+                            Username =
+                                username,
+
+                            Password =
+                                password
+                        }
+                });
+        }
+
+        public Task RequestOnlineUsersAsync()
+        {
+            return SendPacketAsync(
+                new Packet<object>
+                {
+                    Type =
+                        "ONLINE_USERS_REQ",
+
+                    Seq =
+                        NextSeq(),
+
+                    Timestamp =
+                        UnixNow(),
+
+                    Data =
+                        new { }
+                });
+        }
+
+        public Task RequestConversationListAsync()
+        {
+            return SendPacketAsync(
+                new Packet<object>
+                {
+                    Type =
+                        "CONVERSATION_LIST_REQ",
+
+                    Seq =
+                        NextSeq(),
+
+                    Timestamp =
+                        UnixNow(),
+
+                    Data =
+                        new { }
+                });
+        }
+
+        public Task RequestConversationHistoryAsync(
+            int conversationId)
+        {
+            return SendPacketAsync(
+                new Packet<ConversationHistoryRequestData>
+                {
+                    Type =
+                        "CONVERSATION_HISTORY_REQ",
+
+                    Seq =
+                        NextSeq(),
+
+                    Timestamp =
+                        UnixNow(),
+
+                    Data =
+                        new ConversationHistoryRequestData
+                        {
+                            ConversationId =
+                                conversationId
+                        }
+                });
+        }
+
+        public Task SendChatMessageAsync(
+            ChatMessageData data)
+        {
+            return SendPacketAsync(
+                new Packet<ChatMessageData>
+                {
+                    Type =
+                        "CHAT_MSG",
+
+                    Seq =
+                        NextSeq(),
+
+                    Timestamp =
+                        UnixNow(),
+
+                    Data =
+                        data
+                });
+        }
+
+        public Task UpdateAvatarAsync(
+            string avatarData)
+        {
+            return SendPacketAsync(
+                new Packet<AvatarUpdateRequestData>
+                {
+                    Type =
+                        "AVATAR_UPDATE_REQ",
+
+                    Seq =
+                        NextSeq(),
+
+                    Timestamp =
+                        UnixNow(),
+
+                    Data =
+                        new AvatarUpdateRequestData
+                        {
+                            AvatarData =
+                                avatarData
+                        }
+                });
+        }
+
+        // =====================================================
+        // SEND
+        // =====================================================
+
+        private async Task SendPacketAsync<T>(
+            Packet<T> packet)
+        {
+            if (!IsConnected
+                ||
+                _stream == null)
             {
-                _cts?.Cancel();
+                throw new InvalidOperationException(
+                    "Client chưa kết nối server.");
             }
-            catch
-            {
-            }
+
+            await _sendLock.WaitAsync();
 
             try
             {
-                _stream?.Close();
-                _client?.Close();
-            }
-            catch
-            {
+                await MessageProtocol
+                    .SendPacketAsync(
+                        _stream,
+                        packet);
             }
             finally
             {
-                _stream = null;
-                _client = null;
-                _cts = null;
-
-                InvokeOnUI(
-                    () => OnDisconnected?.Invoke());
+                _sendLock.Release();
             }
         }
 
-        
-        // SEND PACKET
-        
-
-        public async Task SendPacketAsync<T>(
-            Packet<T> packet)
-        {
-            if (!IsConnected || _stream == null)
-            {
-                throw new InvalidOperationException(
-                    "Not connected");
-            }
-
-            try
-            {
-                await MessageProtocol.SendPacketAsync(
-                    _stream,
-                    packet);
-            }
-            catch (Exception ex)
-            {
-                RaiseError(
-                    $"Send error: {ex.Message}");
-
-                Disconnect();
-            }
-        }
-
-        
-        // SEND CHAT MESSAGE
-        
-
-        public async Task SendChatMessageAsync(
-            ChatMessageData data)
-        {
-            var packet =
-                new Packet<ChatMessageData>
-                {
-                    Type = "CHAT_MSG",
-
-                    Seq = 0,
-
-                    Timestamp =
-                        DateTimeOffset.UtcNow
-                            .ToUnixTimeSeconds(),
-
-                    Data = data
-                };
-
-            await SendPacketAsync(packet);
-        }
-
-        
-        // RECEIVE LOOP
-        
+        // =====================================================
+        // RECEIVE
+        // =====================================================
 
         private async Task ReceiveLoopAsync(
             CancellationToken token)
@@ -195,145 +328,162 @@ namespace ChatTCP.Client.Networking
                         break;
                     }
 
-                    Packet<JsonElement>? basePacket =
-                        null;
+                    Packet<JsonElement>? packet;
 
                     try
                     {
-                        basePacket =
+                        packet =
                             JsonSerializer.Deserialize<
                                 Packet<JsonElement>>(
                                 raw);
                     }
                     catch
                     {
-                        // Bỏ qua JSON lỗi
+                        continue;
                     }
 
-                    if (basePacket == null)
+                    if (packet == null)
                     {
                         continue;
                     }
 
-                    switch (basePacket.Type)
+                    switch (packet.Type)
                     {
-                        case "CHAT_MSG":
+                        case "LOGIN_RES":
 
-                            TryHandleChatMessage(raw);
+                            FirePacket<
+                                LoginResponseData>(
+                                raw,
+                                OnLoginResponse);
+
+                            break;
+
+                        case "ONLINE_USERS_RES":
+
+                            FirePacket<
+                                OnlineUsersData>(
+                                raw,
+                                OnOnlineUsersReceived);
+
+                            break;
+
+                        case "CONVERSATION_LIST_RES":
+
+                            FirePacket<
+                                ConversationListData>(
+                                raw,
+                                OnConversationListReceived);
+
+                            break;
+
+                        case "CONVERSATION_HISTORY_RES":
+
+                            FirePacket<
+                                ConversationHistoryData>(
+                                raw,
+                                OnConversationHistoryReceived);
 
                             break;
 
                         case "USER_STATUS_NOTIFY":
 
-                            TryHandleUserStatus(raw);
+                            FirePacket<
+                                UserStatusNotifyData>(
+                                raw,
+                                OnUserStatusChanged);
+
+                            break;
+
+                        case "USER_PROFILE_NOTIFY":
+
+                            FirePacket<
+                                UserProfileNotifyData>(
+                                raw,
+                                OnUserProfileChanged);
+
+                            break;
+
+                        case "AVATAR_UPDATE_RES":
+
+                            FirePacket<
+                                AvatarUpdateResponseData>(
+                                raw,
+                                OnAvatarUpdated);
+
+                            break;
+
+                        case "CHAT_MSG":
+
+                            FirePacket<
+                                ChatMessageData>(
+                                raw,
+                                OnChatMessageReceived);
 
                             break;
 
                         case "ERROR":
 
-                            TryHandleError(raw);
+                            HandleError(
+                                raw);
 
                             break;
-
-                            /*
-                             * Có thể mở rộng sau:
-                             *
-                             * LOGIN_RES
-                             * REGISTER_RES
-                             * CONTACT_LIST_RES
-                             * USER_SEARCH_RES
-                             * AVATAR_RES
-                             */
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                // Disconnect chủ động.
             }
             catch (Exception ex)
             {
-                if (!token.IsCancellationRequested)
+                if (!token
+                    .IsCancellationRequested)
                 {
                     RaiseError(
-                        $"Receive loop error: {ex.Message}");
+                        ex.Message);
                 }
-            }
-            finally
-            {
-                Disconnect();
             }
         }
 
-        
-        // CHAT MESSAGE
-        
-
-        private void TryHandleChatMessage(
-            string raw)
+        private void FirePacket<T>(
+            string raw,
+            Action<Packet<T>>? handler)
         {
+            if (handler == null)
+            {
+                return;
+            }
+
+            Packet<T>? packet;
+
             try
             {
-                var packet =
+                packet =
                     JsonSerializer.Deserialize<
-                        Packet<ChatMessageData>>(
+                        Packet<T>>(
                         raw);
-
-                if (packet != null)
-                {
-                    InvokeOnUI(
-                        () =>
-                            OnChatMessageReceived?
-                                .Invoke(packet));
-                }
             }
-            catch (Exception ex)
+            catch
             {
-                RaiseError(
-                    $"Receive CHAT_MSG parse error: {ex.Message}");
+                return;
             }
+
+            if (packet == null)
+            {
+                return;
+            }
+
+            InvokeOnUI(
+                () =>
+                    handler.Invoke(
+                        packet));
         }
 
-        
-        // ONLINE / OFFLINE NOTIFY
-        
-
-        private void TryHandleUserStatus(
+        private void HandleError(
             string raw)
         {
             try
             {
-                var packet =
-                    JsonSerializer.Deserialize<
-                        Packet<UserStatusNotifyData>>(
-                        raw);
-
-                if (packet != null)
-                {
-                    InvokeOnUI(
-                        () =>
-                            OnUserStatusChanged?
-                                .Invoke(packet));
-                }
-            }
-            catch (Exception ex)
-            {
-                RaiseError(
-                    "Receive USER_STATUS_NOTIFY " +
-                    $"parse error: {ex.Message}");
-            }
-        }
-
-        
-        // ERROR PACKET
-        
-
-        private void TryHandleError(
-            string raw)
-        {
-            try
-            {
-                var packet =
+                Packet<ErrorData>? packet =
                     JsonSerializer.Deserialize<
                         Packet<ErrorData>>(
                         raw);
@@ -341,64 +491,87 @@ namespace ChatTCP.Client.Networking
                 if (packet?.Data != null)
                 {
                     RaiseError(
-                        $"Server {packet.Data.Code}: " +
                         packet.Data.Message);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                RaiseError(
-                    $"Receive ERROR parse error: {ex.Message}");
             }
         }
 
-        
-        // UI THREAD
-        
+        // =====================================================
+        // DISCONNECT
+        // =====================================================
 
-        private void InvokeOnUI(
-            Action action)
+        public void Disconnect()
         {
-            if (_dispatcher != null)
+            try
             {
-                try
-                {
-                    if (_dispatcher.CheckAccess())
-                    {
-                        action();
-                    }
-                    else
-                    {
-                        _dispatcher.BeginInvoke(
-                            action);
-                    }
-                }
-                catch
-                {
-                    // Không để Dispatcher làm crash app.
-                }
+                _cts?.Cancel();
             }
-            else
+            catch
             {
-                try
-                {
-                    Task.Run(action);
-                }
-                catch
-                {
-                }
             }
+
+            try
+            {
+                _stream?.Close();
+                _client?.Close();
+            }
+            catch
+            {
+            }
+
+            _stream = null;
+            _client = null;
+            _cts = null;
+
+            InvokeOnUI(
+                () =>
+                    OnDisconnected?
+                        .Invoke());
         }
 
-        
-        // ERROR EVENT
-        
+        // =====================================================
+        // HELPERS
+        // =====================================================
+
+        private int NextSeq()
+        {
+            return Interlocked
+                .Increment(
+                    ref _seq);
+        }
+
+        private static long UnixNow()
+        {
+            return DateTimeOffset.UtcNow
+                .ToUnixTimeSeconds();
+        }
 
         private void RaiseError(
             string message)
         {
             InvokeOnUI(
-                () => OnError?.Invoke(message));
+                () =>
+                    OnError?
+                        .Invoke(
+                            message));
+        }
+
+        private void InvokeOnUI(
+            Action action)
+        {
+            if (_dispatcher == null
+                ||
+                _dispatcher.CheckAccess())
+            {
+                action();
+                return;
+            }
+
+            _dispatcher.BeginInvoke(
+                action);
         }
     }
 }

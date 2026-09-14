@@ -1,8 +1,9 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
-
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 using ChatTCP.Client.Networking;
@@ -12,16 +13,22 @@ using Client.Views;
 
 namespace ChatTCP.Client.Views
 {
-    public partial class ChatView : UserControl
+    public partial class ChatView :
+        UserControl
     {
-        private readonly ChatItem _selectedChat;
+        private ChatItem?
+            _selectedChat;
 
-        private readonly ClientSocketService?
+        private LoginResponseData?
+            _currentUser;
+
+        private ClientSocketService?
             _socketService;
 
-        // =====================================================
-        // CURRENT REPLY
-        // =====================================================
+        public ObservableCollection<ChatMessageItem>
+            Messages
+        { get; } =
+                new();
 
         private string?
             _currentReplyMsgId;
@@ -33,38 +40,70 @@ namespace ChatTCP.Client.Views
             _currentReplySnippet;
 
         // =====================================================
-        // CONSTRUCTOR
+        // DESIGNER
+        // =====================================================
+
+        public ChatView()
+        {
+            InitializeComponent();
+
+            MessagesList.ItemsSource =
+                Messages;
+        }
+
+        // =====================================================
+        // RUNTIME
         // =====================================================
 
         public ChatView(
             ChatItem selectedChat,
-            ClientSocketService? socketService)
+            LoginResponseData currentUser,
+            ClientSocketService socketService)
+            : this()
         {
-            InitializeComponent();
-
             _selectedChat =
                 selectedChat;
+
+            _currentUser =
+                currentUser;
 
             _socketService =
                 socketService;
 
             DataContext =
-                _selectedChat;
+                selectedChat;
 
             ChatUserNameText.Text =
-                _selectedChat.Name;
+                selectedChat.Name;
 
             UpdateOnlineStatus();
 
-            _selectedChat.PropertyChanged +=
+            selectedChat.PropertyChanged +=
                 SelectedChat_PropertyChanged;
+
+            socketService.OnChatMessageReceived +=
+                SocketService_OnChatMessageReceived;
+
+            socketService.OnConversationHistoryReceived +=
+                SocketService_OnConversationHistoryReceived;
+
+            socketService.OnError +=
+                SocketService_OnError;
 
             Unloaded +=
                 ChatView_Unloaded;
+
+            if (selectedChat.ConversationId > 0)
+            {
+                _ =
+                    socketService
+                        .RequestConversationHistoryAsync(
+                            selectedChat.ConversationId);
+            }
         }
 
         // =====================================================
-        // ONLINE STATUS
+        // STATUS
         // =====================================================
 
         private void SelectedChat_PropertyChanged(
@@ -83,97 +122,289 @@ namespace ChatTCP.Client.Views
 
         private void UpdateOnlineStatus()
         {
+            if (_selectedChat == null)
+            {
+                return;
+            }
+
+            bool online =
+                _selectedChat.IsOnline;
+
             ChatUserStatusText.Text =
-                _selectedChat.IsOnline
+                online
                     ? "Đang hoạt động"
                     : "Ngoại tuyến";
 
             ChatUserStatusText.Foreground =
-                _selectedChat.IsOnline
-
-                    ? new SolidColorBrush(
-                        Color.FromRgb(
+                new SolidColorBrush(
+                    online
+                        ? Color.FromRgb(
                             34,
                             197,
-                            94))
-
-                    : new SolidColorBrush(
-                        Color.FromRgb(
-                            156,
+                            94)
+                        : Color.FromRgb(
+                            148,
                             163,
-                            175));
+                            184));
+
+            OnlineBadge.Visibility =
+                online
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
         // =====================================================
-        // REPLY ICON
+        // HISTORY
+        // =====================================================
+
+        private void SocketService_OnConversationHistoryReceived(
+            Packet<ConversationHistoryData> packet)
+        {
+            if (_selectedChat == null
+                ||
+                _currentUser == null)
+            {
+                return;
+            }
+
+            if (packet.Data.ConversationId
+                != _selectedChat.ConversationId)
+            {
+                return;
+            }
+
+            Messages.Clear();
+
+            foreach (
+                ChatMessageData message
+                in packet.Data.Messages)
+            {
+                Messages.Add(
+                    CreateMessageItem(
+                        message));
+            }
+
+            ScrollToBottom();
+        }
+
+        // =====================================================
+        // LIVE MESSAGE
+        // =====================================================
+
+        private void SocketService_OnChatMessageReceived(
+            Packet<ChatMessageData> packet)
+        {
+            if (_selectedChat == null
+                ||
+                _currentUser == null)
+            {
+                return;
+            }
+
+            ChatMessageData data =
+                packet.Data;
+
+            bool belongsToCurrentChat =
+                data.ConversationId > 0
+                &&
+                (
+                    _selectedChat.ConversationId == 0
+                    ||
+                    data.ConversationId ==
+                    _selectedChat.ConversationId
+                )
+                &&
+                (
+                    data.Sender.UserId ==
+                    _selectedChat.UserId
+                    ||
+                    (
+                        data.Sender.UserId ==
+                        _currentUser.UserId
+                        &&
+                        data.TargetId ==
+                        _selectedChat.UserId
+                    )
+                );
+
+            if (!belongsToCurrentChat)
+            {
+                return;
+            }
+
+            // Khi chat bắt đầu từ Contacts,
+            // server mới tạo conversationId.
+            if (_selectedChat.ConversationId == 0)
+            {
+                _selectedChat.ConversationId =
+                    data.ConversationId;
+            }
+
+            // tránh duplicate
+            if (Messages.Any(
+                    x =>
+                        x.MsgId ==
+                        data.MsgId))
+            {
+                return;
+            }
+
+            Messages.Add(
+                CreateMessageItem(
+                    data));
+
+            ScrollToBottom();
+        }
+
+        // =====================================================
+        // SEND
+        // =====================================================
+
+        private async void SendButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            await SendCurrentMessageAsync();
+        }
+
+        private async void MessageInputBox_KeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter)
+            {
+                return;
+            }
+
+            e.Handled =
+                true;
+
+            await SendCurrentMessageAsync();
+        }
+
+        private async Task SendCurrentMessageAsync()
+        {
+            if (_selectedChat == null
+                ||
+                _currentUser == null
+                ||
+                _socketService == null)
+            {
+                return;
+            }
+
+            string content =
+                MessageInputBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(
+                    content))
+            {
+                return;
+            }
+
+            ReplyInfo? reply =
+                null;
+
+            if (!string.IsNullOrWhiteSpace(
+                    _currentReplyMsgId))
+            {
+                reply =
+                    new ReplyInfo
+                    {
+                        MsgId =
+                            _currentReplyMsgId,
+
+                        SenderName =
+                            _currentReplySenderName
+                            ?? string.Empty,
+
+                        ContentSnippet =
+                            _currentReplySnippet
+                            ?? string.Empty
+                    };
+            }
+
+            var data =
+                new ChatMessageData
+                {
+                    ConversationId =
+                        _selectedChat
+                            .ConversationId,
+
+                    TargetType =
+                        "PRIVATE",
+
+                    TargetId =
+                        _selectedChat.UserId,
+
+                    Sender =
+                        new SenderInfo
+                        {
+                            UserId =
+                                _currentUser.UserId,
+
+                            DisplayName =
+                                _currentUser
+                                    .DisplayName,
+
+                            AvatarData =
+                                _currentUser
+                                    .AvatarData
+                        },
+
+                    Content =
+                        content,
+
+                    ReplyTo =
+                        reply
+                };
+
+            try
+            {
+                // Không add local ở đây.
+                // Server sẽ echo CHAT_MSG với MessageId thật.
+                await _socketService
+                    .SendChatMessageAsync(
+                        data);
+
+                MessageInputBox.Clear();
+
+                ClearReplySelection();
+
+                MessageInputBox.Focus();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message);
+            }
+        }
+
+        // =====================================================
+        // REPLY
         // =====================================================
 
         private void ReplyIcon_Click(
             object sender,
             RoutedEventArgs e)
         {
-            if (sender is not Button button)
+            if (sender is not Button button
+                ||
+                button.DataContext
+                is not ChatMessageItem message)
             {
                 return;
             }
 
-            string? tag =
-                button.Tag as string;
-
-            if (string.IsNullOrWhiteSpace(
-                    tag))
-            {
-                return;
-            }
-
-            string[] parts =
-                tag.Split(
-                    '|',
-                    3);
-
-            if (parts.Length < 3)
-            {
-                return;
-            }
-
-            string msgId =
-                parts[0];
-
-            string senderName =
-                parts[1];
-
-            string content =
-                parts[2];
-
-            StartReply(
-                msgId,
-                senderName,
-                content);
-        }
-
-        // =====================================================
-        // START REPLY
-        // =====================================================
-
-        private void StartReply(
-            string msgId,
-            string senderName,
-            string contentSnippet)
-        {
             _currentReplyMsgId =
-                msgId;
+                message.MsgId;
 
             _currentReplySenderName =
-                string.IsNullOrWhiteSpace(
-                    senderName)
-
-                    ? "Tin nhắn được trả lời"
-
-                    : senderName;
+                message.SenderName;
 
             _currentReplySnippet =
-                GetSnippet(
-                    contentSnippet);
+                MakeSnippet(
+                    message.Content);
 
             ReplyComposerSenderText.Text =
                 _currentReplySenderName;
@@ -186,10 +417,6 @@ namespace ChatTCP.Client.Views
 
             MessageInputBox.Focus();
         }
-
-        // =====================================================
-        // CANCEL REPLY
-        // =====================================================
 
         private void CancelReplyButton_Click(
             object sender,
@@ -220,180 +447,92 @@ namespace ChatTCP.Client.Views
         }
 
         // =====================================================
-        // SNIPPET
+        // CONVERT MESSAGE → UI
         // =====================================================
 
-        private static string GetSnippet(
-            string? text)
+        private ChatMessageItem CreateMessageItem(
+            ChatMessageData data)
         {
-            if (string.IsNullOrWhiteSpace(
-                    text))
+            if (_currentUser == null)
             {
-                return "Tin nhắn được trả lời";
+                return new ChatMessageItem();
             }
 
-            string cleaned =
-                text.Trim();
+            bool hasReply =
+                data.ReplyTo != null;
 
-            if (cleaned.Length <= 60)
+            string replySender =
+                string.Empty;
+
+            string replyContent =
+                string.Empty;
+
+            if (data.ReplyTo != null)
             {
-                return cleaned;
+                bool deleted =
+                    string.IsNullOrWhiteSpace(
+                        data.ReplyTo.MsgId)
+                    ||
+                    string.IsNullOrWhiteSpace(
+                        data.ReplyTo.ContentSnippet);
+
+                if (deleted)
+                {
+                    replySender =
+                        "Tin nhắn không khả dụng";
+
+                    replyContent =
+                        "Tin nhắn gốc đã bị xoá";
+                }
+                else
+                {
+                    replySender =
+                        string.IsNullOrWhiteSpace(
+                            data.ReplyTo.SenderName)
+                            ? "Tin nhắn được trả lời"
+                            : data.ReplyTo.SenderName;
+
+                    replyContent =
+                        data.ReplyTo.ContentSnippet;
+                }
             }
 
-            return cleaned.Substring(
-                       0,
-                       60)
-                   + "...";
-        }
+            DateTimeOffset time =
+                data.SentAt > 0
+                    ? DateTimeOffset
+                        .FromUnixTimeSeconds(
+                            data.SentAt)
+                        .ToLocalTime()
+                    : DateTimeOffset.Now;
 
-        // =====================================================
-        // SEND
-        // =====================================================
-
-        private void SendButton_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            string content =
-                MessageInputBox.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(
-                    content))
+            return new ChatMessageItem
             {
-                return;
-            }
+                MsgId =
+                    data.MsgId,
 
-            /*
-             * Sau này khi nối TCP thật:
-             *
-             * ReplyInfo? replyInfo = null;
-             *
-             * if (_currentReplyMsgId != null)
-             * {
-             *     replyInfo = new ReplyInfo
-             *     {
-             *         MsgId = _currentReplyMsgId,
-             *         SenderName =
-             *             _currentReplySenderName ?? "",
-             *         ContentSnippet =
-             *             _currentReplySnippet ?? ""
-             *     };
-             * }
-             *
-             * var data = new ChatMessageData
-             * {
-             *     ...
-             *     ReplyTo = replyInfo
-             * };
-             *
-             * await _socketService.SendChatMessageAsync(data);
-             */
+                SenderName =
+                    data.Sender.DisplayName,
 
-            MessageInputBox.Clear();
+                Content =
+                    data.Content,
 
-            ClearReplySelection();
+                IsMine =
+                    data.Sender.UserId ==
+                    _currentUser.UserId,
 
-            MessageInputBox.Focus();
-        }
+                HasReply =
+                    hasReply,
 
-        // =====================================================
-        // EXISTING REPLY PREVIEW
-        // =====================================================
+                ReplySenderName =
+                    replySender,
 
-        public void DisplayReplyPreview(
-            ReplyInfo? reply,
-            bool hasReplyReference)
-        {
-            if (!hasReplyReference)
-            {
-                ReplyPreviewBorder.Visibility =
-                    Visibility.Collapsed;
+                ReplyContent =
+                    replyContent,
 
-                return;
-            }
-
-            ReplyPreviewBorder.Visibility =
-                Visibility.Visible;
-
-            // =================================================
-            // ORIGINAL MESSAGE DELETED / NOT FOUND
-            // =================================================
-
-            if (reply == null)
-            {
-                ShowDeletedReply();
-
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                    reply.MsgId))
-            {
-                ShowDeletedReply();
-
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                    reply.ContentSnippet))
-            {
-                ShowDeletedReply();
-
-                return;
-            }
-
-            // =================================================
-            // ORIGINAL MESSAGE EXISTS
-            // =================================================
-
-            ReplySenderText.Text =
-                string.IsNullOrWhiteSpace(
-                    reply.SenderName)
-
-                    ? "Tin nhắn được trả lời"
-
-                    : reply.SenderName;
-
-            ReplyContentText.Text =
-                reply.ContentSnippet;
-
-            ReplyContentText.FontStyle =
-                FontStyles.Normal;
-
-            ReplyContentText.Opacity =
-                1;
-        }
-
-        // =====================================================
-        // SAFE MESSAGE WRAPPER
-        // =====================================================
-
-        public void DisplayMessageReplyPreview(
-            ChatMessageData? message,
-            bool hasReplyReference)
-        {
-            DisplayReplyPreview(
-                message?.ReplyTo,
-                hasReplyReference);
-        }
-
-        // =====================================================
-        // DELETED REPLY
-        // =====================================================
-
-        private void ShowDeletedReply()
-        {
-            ReplySenderText.Text =
-                "Tin nhắn không khả dụng";
-
-            ReplyContentText.Text =
-                "Tin nhắn gốc đã bị xoá";
-
-            ReplyContentText.FontStyle =
-                FontStyles.Italic;
-
-            ReplyContentText.Opacity =
-                0.7;
+                Time =
+                    time.ToString(
+                        "HH:mm")
+            };
         }
 
         // =====================================================
@@ -414,15 +553,118 @@ namespace ChatTCP.Client.Views
         }
 
         // =====================================================
-        // CLEAN EVENT
+        // HELPERS
         // =====================================================
+
+        private static string MakeSnippet(
+            string text)
+        {
+            if (text.Length <= 60)
+            {
+                return text;
+            }
+
+            return text[..60]
+                   + "...";
+        }
+
+        private void ScrollToBottom()
+        {
+            if (Messages.Count == 0)
+            {
+                return;
+            }
+
+            MessagesList.ScrollIntoView(
+                Messages[^1]);
+        }
+
+        private void SocketService_OnError(
+            string message)
+        {
+            MessageBox.Show(
+                message,
+                "Chat",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
 
         private void ChatView_Unloaded(
             object sender,
             RoutedEventArgs e)
         {
-            _selectedChat.PropertyChanged -=
-                SelectedChat_PropertyChanged;
+            if (_selectedChat != null)
+            {
+                _selectedChat.PropertyChanged -=
+                    SelectedChat_PropertyChanged;
+            }
+
+            if (_socketService != null)
+            {
+                _socketService.OnChatMessageReceived -=
+                    SocketService_OnChatMessageReceived;
+
+                _socketService.OnConversationHistoryReceived -=
+                    SocketService_OnConversationHistoryReceived;
+
+                _socketService.OnError -=
+                    SocketService_OnError;
+            }
         }
+    }
+
+    // =========================================================
+    // MESSAGE UI MODEL
+    // =========================================================
+
+    public class ChatMessageItem
+    {
+        public string MsgId
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public string SenderName
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public string Content
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public bool IsMine
+        {
+            get;
+            set;
+        }
+
+        public bool HasReply
+        {
+            get;
+            set;
+        }
+
+        public string ReplySenderName
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public string ReplyContent
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public string Time
+        {
+            get;
+            set;
+        } = string.Empty;
     }
 }

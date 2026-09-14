@@ -4,14 +4,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="600"
-             d:DesignWidth="500"
+             d:DesignHeight="700"
+             d:DesignWidth="700"
              Background="White">
 
     <Grid Background="White">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="70"/>
+            <RowDefinition Height="72"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -28,21 +28,31 @@
             <Grid Margin="20,0">
 
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="55"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- AVATAR -->
 
                 <Grid Grid.Column="0"
-                      Width="42"
-                      Height="42"
-                      VerticalAlignment="Center">
+                      Width="45"
+                      Height="45">
 
                     <Ellipse Fill="#DCEEFF"/>
 
-                    <Ellipse Width="12"
-                             Height="12"
+                    <Border Width="43"
+                            Height="43"
+                            CornerRadius="22"
+                            ClipToBounds="True">
+
+                        <Image Source="{Binding AvatarImage}"
+                               Stretch="UniformToFill"/>
+
+                    </Border>
+
+                    <Ellipse Width="13"
+                             Height="13"
                              Stroke="White"
                              StrokeThickness="2"
                              HorizontalAlignment="Right"
@@ -53,7 +63,7 @@
                             <Style TargetType="Ellipse">
 
                                 <Setter Property="Fill"
-                                        Value="#EF4444"/>
+                                        Value="#CBD5E1"/>
 
                                 <Style.Triggers>
 
@@ -75,209 +85,298 @@
 
                 </Grid>
 
-                <!-- USER -->
+                <!-- NAME -->
 
                 <StackPanel Grid.Column="1"
-                            VerticalAlignment="Center"
-                            Margin="8,0,0,0">
+                            Margin="6,0,0,0"
+                            VerticalAlignment="Center">
 
                     <TextBlock x:Name="ChatUserNameText"
-                               Text="Tên người dùng"
                                FontSize="17"
                                FontWeight="SemiBold"
                                Foreground="#111827"/>
 
                     <TextBlock x:Name="ChatUserStatusText"
-                               Text="Ngoại tuyến"
+                               Margin="0,3,0,0"
                                FontSize="12"
-                               Foreground="#9CA3AF"
-                               Margin="0,2,0,0"/>
+                               Foreground="#94A3B8"/>
 
                 </StackPanel>
+
+                <!-- ONLINE BADGE -->
+
+                <Border x:Name="OnlineBadge"
+                        Grid.Column="2"
+                        Padding="10,5"
+                        CornerRadius="10"
+                        Background="#ECFDF5"
+                        VerticalAlignment="Center">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <Ellipse Width="7"
+                                 Height="7"
+                                 Fill="#22C55E"
+                                 Margin="0,0,6,0"/>
+
+                        <TextBlock Text="Online"
+                                   FontSize="11"
+                                   Foreground="#16A34A"/>
+
+                    </StackPanel>
+
+                </Border>
 
             </Grid>
 
         </Border>
 
         <!-- ================================================= -->
-        <!-- MESSAGE AREA -->
+        <!-- MESSAGES -->
         <!-- ================================================= -->
 
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      Background="#F8FAFC">
+        <ListBox x:Name="MessagesList"
+                 Grid.Row="1"
+                 Padding="20,15"
+                 Background="#F8FAFC"
+                 BorderThickness="0"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto">
 
-            <StackPanel Margin="20">
+            <ListBox.ItemContainerStyle>
 
-                <!-- OTHER MESSAGE -->
+                <Style TargetType="ListBoxItem">
 
-                <StackPanel HorizontalAlignment="Left"
-                            Margin="0,6">
+                    <Setter Property="Focusable"
+                            Value="False"/>
 
-                    <StackPanel Orientation="Horizontal">
+                    <Setter Property="Padding"
+                            Value="0"/>
 
-                        <Border Background="#E5E7EB"
-                                CornerRadius="12"
-                                Padding="12,8"
-                                MaxWidth="320">
+                    <Setter Property="Margin"
+                            Value="0,4"/>
 
-                            <TextBlock Text="Chào bạn 👋"
-                                       FontSize="14"
-                                       Foreground="#111827"
-                                       TextWrapping="Wrap"/>
+                    <Setter Property="BorderThickness"
+                            Value="0"/>
 
-                        </Border>
+                    <Setter Property="HorizontalContentAlignment"
+                            Value="Stretch"/>
 
-                        <Button Width="30"
-                                Height="30"
-                                Margin="6,0,0,0"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Cursor="Hand"
-                                ToolTip="Reply"
-                                Tag="m1|Trần Minh Anh|Chào bạn 👋"
-                                Click="ReplyIcon_Click">
+                    <Setter Property="Template">
 
-                            <Image Source="/Assets/Icon/icon_reply.png"
-                                   Width="18"
-                                   Height="18"
-                                   Stretch="Uniform"/>
+                        <Setter.Value>
 
-                        </Button>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <ContentPresenter/>
+                            </ControlTemplate>
 
-                    </StackPanel>
+                        </Setter.Value>
 
-                    <TextBlock Text="10:15"
-                               FontSize="11"
-                               Foreground="#9CA3AF"
-                               Margin="4,4,0,0"/>
+                    </Setter>
 
-                </StackPanel>
+                </Style>
 
-                <!-- MY MESSAGE -->
+            </ListBox.ItemContainerStyle>
 
-                <StackPanel HorizontalAlignment="Right"
-                            Margin="0,6">
+            <ListBox.ItemTemplate>
 
-                    <StackPanel Orientation="Horizontal">
+                <DataTemplate>
 
-                        <Button Width="30"
-                                Height="30"
-                                Margin="0,0,6,0"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Cursor="Hand"
-                                ToolTip="Reply"
-                                Tag="m2|Bạn|Hello!"
-                                Click="ReplyIcon_Click">
+                    <Grid>
 
-                            <Image Source="/Assets/Icon/icon_reply.png"
-                                   Width="18"
-                                   Height="18"
-                                   Stretch="Uniform"/>
+                        <Grid.Style>
 
-                        </Button>
+                            <Style TargetType="Grid">
 
-                        <Border Background="#0A84FF"
-                                CornerRadius="12"
-                                Padding="12,8"
-                                MaxWidth="320">
+                                <Setter Property="HorizontalAlignment"
+                                        Value="Left"/>
 
-                            <TextBlock Text="Hello!"
-                                       FontSize="14"
-                                       Foreground="White"/>
+                                <Style.Triggers>
 
-                        </Border>
+                                    <DataTrigger Binding="{Binding IsMine}"
+                                                 Value="True">
 
-                    </StackPanel>
+                                        <Setter Property="HorizontalAlignment"
+                                                Value="Right"/>
 
-                    <TextBlock Text="10:16"
-                               FontSize="11"
-                               Foreground="#9CA3AF"
-                               HorizontalAlignment="Right"
-                               Margin="0,4,4,0"/>
+                                    </DataTrigger>
 
-                </StackPanel>
+                                </Style.Triggers>
 
-                <!-- REPLY SAMPLE -->
+                            </Style>
 
-                <StackPanel HorizontalAlignment="Left"
-                            Margin="0,6">
+                        </Grid.Style>
 
-                    <StackPanel Orientation="Horizontal">
+                        <StackPanel>
 
-                        <Border Background="#E5E7EB"
-                                CornerRadius="12"
-                                Padding="12,8"
-                                MaxWidth="320">
+                            <StackPanel Orientation="Horizontal">
 
-                            <StackPanel>
+                                <!-- REPLY BUTTON LEFT FOR MY MESSAGE -->
 
-                                <Border x:Name="ReplyPreviewBorder"
-                                        Background="#F9FAFB"
-                                        BorderBrush="#0A84FF"
-                                        BorderThickness="3,0,0,0"
-                                        CornerRadius="4"
-                                        Padding="8,5"
-                                        Margin="0,0,0,7">
+                                <Button x:Name="MyReplyButton"
+                                        Width="32"
+                                        Height="32"
+                                        Margin="0,0,7,0"
+                                        Padding="0"
+                                        Visibility="Collapsed"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        ToolTip="Trả lời"
+                                        Click="ReplyIcon_Click">
+
+                                    <Border Width="29"
+                                            Height="29"
+                                            CornerRadius="15"
+                                            Background="White"
+                                            BorderBrush="#E5E7EB"
+                                            BorderThickness="1">
+
+                                        <Image Source="pack://application:,,,/Assets/Icon/icon_reply.png"
+                                               Width="16"
+                                               Height="16"/>
+
+                                    </Border>
+
+                                </Button>
+
+                                <!-- BUBBLE -->
+
+                                <Border x:Name="MessageBubble"
+                                        Background="#E5E7EB"
+                                        CornerRadius="14"
+                                        Padding="11"
+                                        MaxWidth="350">
 
                                     <StackPanel>
 
-                                        <TextBlock x:Name="ReplySenderText"
-                                                   Text="Bạn"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#0A84FF"/>
+                                        <!-- REPLY PREVIEW -->
 
-                                        <TextBlock x:Name="ReplyContentText"
-                                                   Text="Tin nhắn được trả lời"
-                                                   FontSize="12"
-                                                   Foreground="#6B7280"
+                                        <Border x:Name="ReplyBlock"
+                                                Visibility="Collapsed"
+                                                Background="#F9FAFB"
+                                                BorderBrush="#0A84FF"
+                                                BorderThickness="3,0,0,0"
+                                                CornerRadius="6"
+                                                Padding="8,6"
+                                                Margin="0,0,0,8">
+
+                                            <StackPanel>
+
+                                                <TextBlock Text="{Binding ReplySenderName}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#0A84FF"/>
+
+                                                <TextBlock Text="{Binding ReplyContent}"
+                                                           Margin="0,2,0,0"
+                                                           MaxWidth="280"
+                                                           FontSize="12"
+                                                           Foreground="#6B7280"
+                                                           TextWrapping="Wrap"/>
+
+                                            </StackPanel>
+
+                                        </Border>
+
+                                        <TextBlock x:Name="MessageText"
+                                                   Text="{Binding Content}"
+                                                   FontSize="14"
+                                                   Foreground="#111827"
                                                    TextWrapping="Wrap"/>
 
                                     </StackPanel>
 
                                 </Border>
 
-                                <TextBlock Text="Đây là tin nhắn reply."
-                                           FontSize="14"
-                                           Foreground="#111827"/>
+                                <!-- REPLY BUTTON RIGHT FOR OTHER MESSAGE -->
+
+                                <Button x:Name="OtherReplyButton"
+                                        Width="32"
+                                        Height="32"
+                                        Margin="7,0,0,0"
+                                        Padding="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        ToolTip="Trả lời"
+                                        Click="ReplyIcon_Click">
+
+                                    <Border Width="29"
+                                            Height="29"
+                                            CornerRadius="15"
+                                            Background="White"
+                                            BorderBrush="#E5E7EB"
+                                            BorderThickness="1">
+
+                                        <Image Source="pack://application:,,,/Assets/Icon/icon_reply.png"
+                                               Width="16"
+                                               Height="16"/>
+
+                                    </Border>
+
+                                </Button>
 
                             </StackPanel>
 
-                        </Border>
+                            <TextBlock x:Name="MessageTime"
+                                       Text="{Binding Time}"
+                                       Margin="5,4,5,0"
+                                       FontSize="10"
+                                       Foreground="#94A3B8"
+                                       HorizontalAlignment="Left"/>
 
-                        <Button Width="30"
-                                Height="30"
-                                Margin="6,0,0,0"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Cursor="Hand"
-                                ToolTip="Reply"
-                                Tag="m3|Trần Minh Anh|Đây là tin nhắn reply."
-                                Click="ReplyIcon_Click">
+                        </StackPanel>
 
-                            <Image Source="/Assets/Icon/icon_reply.png"
-                                   Width="18"
-                                   Height="18"/>
+                    </Grid>
 
-                        </Button>
+                    <DataTemplate.Triggers>
 
-                    </StackPanel>
+                        <DataTrigger Binding="{Binding HasReply}"
+                                     Value="True">
 
-                    <TextBlock Text="10:20"
-                               FontSize="11"
-                               Foreground="#9CA3AF"
-                               Margin="4,4,0,0"/>
+                            <Setter TargetName="ReplyBlock"
+                                    Property="Visibility"
+                                    Value="Visible"/>
 
-                </StackPanel>
+                        </DataTrigger>
 
-            </StackPanel>
+                        <DataTrigger Binding="{Binding IsMine}"
+                                     Value="True">
 
-        </ScrollViewer>
+                            <Setter TargetName="MessageBubble"
+                                    Property="Background"
+                                    Value="#0A84FF"/>
+
+                            <Setter TargetName="MessageText"
+                                    Property="Foreground"
+                                    Value="White"/>
+
+                            <Setter TargetName="MessageTime"
+                                    Property="HorizontalAlignment"
+                                    Value="Right"/>
+
+                            <Setter TargetName="MyReplyButton"
+                                    Property="Visibility"
+                                    Value="Visible"/>
+
+                            <Setter TargetName="OtherReplyButton"
+                                    Property="Visibility"
+                                    Value="Collapsed"/>
+
+                        </DataTrigger>
+
+                    </DataTemplate.Triggers>
+
+                </DataTemplate>
+
+            </ListBox.ItemTemplate>
+
+        </ListBox>
 
         <!-- ================================================= -->
-        <!-- INPUT -->
+        <!-- INPUT AREA -->
         <!-- ================================================= -->
 
         <Border Grid.Row="2"
@@ -285,33 +384,40 @@
                 BorderBrush="#E5E7EB"
                 BorderThickness="0,1,0,0">
 
-            <Grid Margin="16">
+            <Grid Margin="16,12">
 
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- REPLY COMPOSER -->
+                <!-- CURRENT REPLY -->
 
                 <Border x:Name="ReplyComposerBorder"
                         Grid.Row="0"
-                        Background="#F9FAFB"
-                        BorderBrush="#D1D5DB"
-                        BorderThickness="1"
-                        CornerRadius="10"
+                        Visibility="Collapsed"
+                        Margin="48,0,60,10"
                         Padding="10,8"
-                        Margin="0,0,0,10"
-                        Visibility="Collapsed">
+                        CornerRadius="10"
+                        Background="#F8FAFC"
+                        BorderBrush="#DDE3EA"
+                        BorderThickness="1">
 
                     <Grid>
 
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="35"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel>
+                        <Border Grid.Column="0"
+                                Width="4"
+                                CornerRadius="2"
+                                Background="#0A84FF"/>
+
+                        <StackPanel Grid.Column="1"
+                                    Margin="10,0,5,0">
 
                             <TextBlock x:Name="ReplyComposerSenderText"
                                        FontSize="11"
@@ -319,17 +425,18 @@
                                        Foreground="#0A84FF"/>
 
                             <TextBlock x:Name="ReplyComposerContentText"
+                                       Margin="0,3,0,0"
                                        FontSize="12"
                                        Foreground="#6B7280"
                                        TextWrapping="Wrap"/>
 
                         </StackPanel>
 
-                        <Button Grid.Column="1"
+                        <Button Grid.Column="2"
                                 Width="28"
                                 Height="28"
-                                Margin="8,0,0,0"
-                                Content="✕"
+                                Content="×"
+                                FontSize="20"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Cursor="Hand"
@@ -344,9 +451,9 @@
                 <Grid Grid.Row="1">
 
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="48"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="60"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- EMOJI -->
@@ -354,50 +461,64 @@
                     <Button Grid.Column="0"
                             Width="42"
                             Height="42"
-                            Margin="0,0,8,0"
-                            BorderThickness="0"
+                            Padding="0"
                             Background="Transparent"
+                            BorderThickness="0"
                             Cursor="Hand"
-                            ToolTip="Emoji"
                             Click="EmojiButton_Click">
 
-                        <Image Source="/Assets/Icon/icon_emoji.png"
-                               Width="25"
-                               Height="25"/>
+                        <Border Width="37"
+                                Height="37"
+                                CornerRadius="19"
+                                Background="#F3F4F6">
+
+                            <Image Source="pack://application:,,,/Assets/Icon/icon_emoji.png"
+                                   Width="22"
+                                   Height="22"/>
+
+                        </Border>
 
                     </Button>
 
-                    <!-- MESSAGE INPUT -->
+                    <!-- TEXTBOX -->
 
                     <Border Grid.Column="1"
-                            Background="#F3F4F6"
-                            CornerRadius="15">
+                            Height="44"
+                            CornerRadius="18"
+                            Background="#F3F4F6">
 
                         <TextBox x:Name="MessageInputBox"
-                                 Background="Transparent"
+                                 Padding="15,0"
                                  BorderThickness="0"
+                                 Background="Transparent"
                                  FontSize="14"
-                                 Foreground="#111827"
-                                 Padding="14,10"
-                                 VerticalContentAlignment="Center"/>
+                                 VerticalContentAlignment="Center"
+                                 KeyDown="MessageInputBox_KeyDown"/>
 
                     </Border>
 
                     <!-- SEND -->
 
                     <Button Grid.Column="2"
-                            Width="52"
-                            Height="42"
+                            Width="50"
+                            Height="44"
                             Margin="8,0,0,0"
-                            Background="#0A84FF"
+                            Padding="0"
+                            Background="Transparent"
                             BorderThickness="0"
                             Cursor="Hand"
-                            ToolTip="Gửi"
                             Click="SendButton_Click">
 
-                        <Image Source="/Assets/Icon/icon_send.png"
-                               Width="24"
-                               Height="24"/>
+                        <Border Width="46"
+                                Height="42"
+                                CornerRadius="13"
+                                Background="#0A84FF">
+
+                            <Image Source="pack://application:,,,/Assets/Icon/icon_send.png"
+                                   Width="24"
+                                   Height="24"/>
+
+                        </Border>
 
                     </Button>
 

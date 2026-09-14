@@ -6,10 +6,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 using ChatTCP.Client.Networking;
@@ -18,74 +20,51 @@ using ChatTCP.Common.Models;
 
 namespace Client.Views
 {
-    public partial class ContactListView : UserControl
+    public partial class ContactListView :
+        UserControl
     {
-        // =====================================================
-        // CHAT DATA
-        // =====================================================
-
-        public ObservableCollection<ChatItem> Chats { get; }
-            = new ObservableCollection<ChatItem>();
-
-        private readonly ICollectionView _chatView;
-
-        private readonly string _avatarFolder;
-        private readonly string _avatarFile;
-
-        private readonly ClientSocketService? _socketService;
-
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
-
-        public ContactListView()
-            : this(null)
+        private enum ListMode
         {
+            Chats,
+            OnlineContacts
         }
 
+        private ListMode _currentMode =
+            ListMode.Chats;
+
+        public ObservableCollection<ChatItem>
+            Chats
+        { get; } =
+                new();
+
+        private readonly ICollectionView
+            _chatView;
+
+        private readonly ClientSocketService
+            _socketService;
+
+        private readonly LoginResponseData
+            _currentUser;
+
+        public event Action?
+            LogoutRequested;
+
         public ContactListView(
-            ClientSocketService? socketService)
+            ClientSocketService socketService,
+            LoginResponseData currentUser)
         {
             InitializeComponent();
 
-            _socketService = socketService;
+            _socketService =
+                socketService;
 
-            // =================================================
-            // SOCKET STATUS EVENT
-            // =================================================
-
-            if (_socketService != null)
-            {
-                _socketService.OnUserStatusChanged +=
-                    SocketService_OnUserStatusChanged;
-
-                Unloaded +=
-                    ContactListView_Unloaded;
-            }
-
-            // =================================================
-            // AVATAR STORAGE
-            // =================================================
-
-            _avatarFolder =
-                Path.Combine(
-                    Environment.GetFolderPath(
-                        Environment.SpecialFolder.ApplicationData),
-                    "TCPChat",
-                    "Client");
-
-            _avatarFile =
-                Path.Combine(
-                    _avatarFolder,
-                    "my-avatar.png");
-
-            // =================================================
-            // CHAT COLLECTION
-            // =================================================
+            _currentUser =
+                currentUser;
 
             _chatView =
                 CollectionViewSource
-                    .GetDefaultView(Chats);
+                    .GetDefaultView(
+                        Chats);
 
             _chatView.Filter =
                 FilterChat;
@@ -93,118 +72,180 @@ namespace Client.Views
             ChatList.ItemsSource =
                 _chatView;
 
-            // =================================================
-            // TEMP DATA
-            // =================================================
+            // SOCKET EVENTS
+            _socketService.OnOnlineUsersReceived +=
+                SocketService_OnOnlineUsersReceived;
 
-            LoadSampleData();
+            _socketService.OnConversationListReceived +=
+                SocketService_OnConversationListReceived;
 
-            // =================================================
-            // MY AVATAR
-            // =================================================
+            _socketService.OnUserStatusChanged +=
+                SocketService_OnUserStatusChanged;
 
-            LoadSavedAvatar();
+            _socketService.OnUserProfileChanged +=
+                SocketService_OnUserProfileChanged;
+
+            _socketService.OnAvatarUpdated +=
+                SocketService_OnAvatarUpdated;
+
+            _socketService.OnChatMessageReceived +=
+                SocketService_OnChatMessageReceived;
+
+            _socketService.OnError +=
+                SocketService_OnError;
+
+            Loaded +=
+                ContactListView_Loaded;
+
+            Unloaded +=
+                ContactListView_Unloaded;
+
+            SetMyAvatar(
+                currentUser.AvatarData);
+
+            UpdateMenuVisuals();
 
             UpdateEmptyState();
         }
 
         // =====================================================
-        // SAMPLE DATA
+        // LOAD DEFAULT CHAT LIST
         // =====================================================
 
-        private void LoadSampleData()
+        private async void ContactListView_Loaded(
+            object sender,
+            RoutedEventArgs e)
         {
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "1",
-                    Name = "Nguyễn Văn Nam",
-                    Username = "nam",
-                    IsOnline = true,
-                    LastMessage = "Hello, bạn đang làm gì vậy?",
-                    Time = "18:30"
-                });
-
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "2",
-                    Name = "Trần Minh Anh",
-                    Username = "minhanh",
-                    IsOnline = false,
-                    LastMessage = "Xin chào 👋",
-                    Time = "17:20"
-                });
-
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "3",
-                    Name = "Lê Hoàng Long",
-                    Username = "long123",
-                    IsOnline = true,
-                    LastMessage = "Tối nay học nhóm không?",
-                    Time = "16:45"
-                });
-
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "4",
-                    Name = "Phạm Thu Hà",
-                    Username = "thuha",
-                    IsOnline = false,
-                    LastMessage = "Ok nha 😄",
-                    Time = "15:12"
-                });
-
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "5",
-                    Name = "Đỗ Minh Quân",
-                    Username = "minhquan",
-                    IsOnline = false,
-                    LastMessage = "Gửi file cho mình nhé",
-                    Time = "14:05"
-                });
-
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "6",
-                    Name = "Nguyễn Thảo Vy",
-                    Username = "thaovy",
-                    IsOnline = true,
-                    LastMessage = "Cảm ơn bạn!",
-                    Time = "12:30"
-                });
-
-            AddChat(
-                new ChatItem
-                {
-                    UserId = "7",
-                    Name = "Trần Quốc Huy",
-                    Username = "quochuy",
-                    IsOnline = false,
-                    LastMessage = "Mai gặp nhé.",
-                    Time = "10:15"
-                });
+            await LoadChatsAsync();
         }
 
         // =====================================================
-        // ADD CHAT
+        // CHAT MENU
         // =====================================================
 
-        public void AddChat(
-            ChatItem chat)
+        private async void ChatButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            if (chat == null)
+            await LoadChatsAsync();
+        }
+
+        private async Task LoadChatsAsync()
+        {
+            _currentMode =
+                ListMode.Chats;
+
+            ListTitleText.Text =
+                "Danh sách chat";
+
+            ListSubtitleText.Text =
+                "Các cuộc trò chuyện gần đây";
+
+            UpdateMenuVisuals();
+
+            await _socketService
+                .RequestConversationListAsync();
+        }
+
+        // =====================================================
+        // CONTACTS MENU
+        // =====================================================
+
+        private async void ContactsButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            _currentMode =
+                ListMode.OnlineContacts;
+
+            ListTitleText.Text =
+                "Người đang online";
+
+            ListSubtitleText.Text =
+                "Chọn một người để bắt đầu trò chuyện";
+
+            UpdateMenuVisuals();
+
+            await _socketService
+                .RequestOnlineUsersAsync();
+        }
+
+        private void UpdateMenuVisuals()
+        {
+            ChatMenuBackground.Background =
+                new SolidColorBrush(
+                    _currentMode ==
+                    ListMode.Chats
+                        ? Colors.White
+                        : Color.FromArgb(
+                            48,
+                            255,
+                            255,
+                            255));
+
+            ContactsMenuBackground.Background =
+                new SolidColorBrush(
+                    _currentMode ==
+                    ListMode.OnlineContacts
+                        ? Colors.White
+                        : Color.FromArgb(
+                            48,
+                            255,
+                            255,
+                            255));
+        }
+
+        // =====================================================
+        // CHAT LIST RESPONSE
+        // =====================================================
+
+        private void SocketService_OnConversationListReceived(
+            Packet<ConversationListData> packet)
+        {
+            if (_currentMode !=
+                ListMode.Chats)
             {
                 return;
             }
 
-            Chats.Add(chat);
+            Chats.Clear();
+
+            foreach (
+                ConversationListItemData item
+                in packet.Data.Conversations)
+            {
+                Chats.Add(
+                    new ChatItem
+                    {
+                        ConversationId =
+                            item.ConversationId,
+
+                        UserId =
+                            item.OtherUserId,
+
+                        Name =
+                            item.DisplayName,
+
+                        Username =
+                            item.Username,
+
+                        AvatarData =
+                            item.AvatarData,
+
+                        AvatarImage =
+                            Base64ToBitmap(
+                                item.AvatarData),
+
+                        IsOnline =
+                            item.IsOnline,
+
+                        LastMessage =
+                            item.LastMessage,
+
+                        Time =
+                            item.LastMessageTime
+                    });
+            }
 
             _chatView.Refresh();
 
@@ -212,21 +253,177 @@ namespace Client.Views
         }
 
         // =====================================================
-        // CLEAR CHAT
+        // ONLINE USERS
         // =====================================================
 
-        public void ClearChats()
+        private void SocketService_OnOnlineUsersReceived(
+            Packet<OnlineUsersData> packet)
         {
+            if (_currentMode !=
+                ListMode.OnlineContacts)
+            {
+                return;
+            }
+
             Chats.Clear();
+
+            foreach (
+                OnlineUserData user
+                in packet.Data.Users)
+            {
+                Chats.Add(
+                    new ChatItem
+                    {
+                        ConversationId =
+                            0,
+
+                        UserId =
+                            user.UserId,
+
+                        Name =
+                            user.DisplayName,
+
+                        Username =
+                            user.Username,
+
+                        AvatarData =
+                            user.AvatarData,
+
+                        AvatarImage =
+                            Base64ToBitmap(
+                                user.AvatarData),
+
+                        IsOnline =
+                            true,
+
+                        LastMessage =
+                            "Đang online",
+
+                        Time =
+                            string.Empty
+                    });
+            }
 
             _chatView.Refresh();
 
-            ChatContentHost.Content = null;
+            UpdateEmptyState();
+        }
+
+        // =====================================================
+        // ONLINE / OFFLINE REALTIME
+        // =====================================================
+
+        private async void SocketService_OnUserStatusChanged(
+            Packet<UserStatusNotifyData> packet)
+        {
+            if (_currentMode ==
+                ListMode.OnlineContacts)
+            {
+                // Contact list chỉ chứa online users,
+                // nên refresh lại từ server.
+                await _socketService
+                    .RequestOnlineUsersAsync();
+
+                return;
+            }
+
+            ChatItem? existing =
+                Chats.FirstOrDefault(
+                    x =>
+                        x.UserId ==
+                        packet.Data.UserId);
+
+            if (existing != null)
+            {
+                existing.IsOnline =
+                    string.Equals(
+                        packet.Data.Status,
+                        "ONLINE",
+                        StringComparison
+                            .OrdinalIgnoreCase);
+            }
+        }
+
+        // =====================================================
+        // OTHER USER AVATAR CHANGED
+        // =====================================================
+
+        private void SocketService_OnUserProfileChanged(
+            Packet<UserProfileNotifyData> packet)
+        {
+            ChatItem? user =
+                Chats.FirstOrDefault(
+                    x =>
+                        x.UserId ==
+                        packet.Data.UserId);
+
+            if (user != null)
+            {
+                user.AvatarData =
+                    packet.Data.AvatarData;
+
+                user.AvatarImage =
+                    Base64ToBitmap(
+                        packet.Data.AvatarData);
+            }
+        }
+
+        // =====================================================
+        // MY AVATAR UPDATED
+        // =====================================================
+
+        private void SocketService_OnAvatarUpdated(
+            Packet<AvatarUpdateResponseData> packet)
+        {
+            if (!packet.Data.Success)
+            {
+                return;
+            }
+
+            _currentUser.AvatarData =
+                packet.Data.AvatarData;
+
+            SetMyAvatar(
+                packet.Data.AvatarData);
+        }
+
+        // =====================================================
+        // NEW MESSAGE → REFRESH CHAT LIST
+        // =====================================================
+
+        private async void SocketService_OnChatMessageReceived(
+            Packet<ChatMessageData> packet)
+        {
+            if (_currentMode ==
+                ListMode.Chats)
+            {
+                await _socketService
+                    .RequestConversationListAsync();
+            }
+        }
+
+        // =====================================================
+        // OPEN CHAT
+        // =====================================================
+
+        private void ChatList_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (ChatList.SelectedItem
+                is not ChatItem selected)
+            {
+                return;
+            }
+
+            ChatContentHost.Content =
+                new ChatView(
+                    selected,
+                    _currentUser,
+                    _socketService);
 
             NoChatSelectedPanel.Visibility =
-                Visibility.Visible;
-
-            UpdateEmptyState();
+                Visibility.Collapsed;
         }
 
         // =====================================================
@@ -253,18 +450,15 @@ namespace Client.Views
                 return true;
             }
 
-            bool matchName =
-                chat.Name.Contains(
-                    keyword,
-                    StringComparison.CurrentCultureIgnoreCase);
-
-            bool matchUsername =
-                chat.Username.Contains(
-                    keyword,
-                    StringComparison.CurrentCultureIgnoreCase);
-
-            return matchName ||
-                   matchUsername;
+            return chat.Name.Contains(
+                       keyword,
+                       StringComparison
+                           .CurrentCultureIgnoreCase)
+                   ||
+                   chat.Username.Contains(
+                       keyword,
+                       StringComparison
+                           .CurrentCultureIgnoreCase);
         }
 
         private void SearchTextBox_TextChanged(
@@ -277,36 +471,52 @@ namespace Client.Views
         }
 
         // =====================================================
-        // SELECT CHAT
+        // EMPTY
         // =====================================================
 
-        private void ChatList_SelectionChanged(
-            object sender,
-            SelectionChangedEventArgs e)
+        private void UpdateEmptyState()
         {
-            if (ChatList.SelectedItem
-                is not ChatItem selectedChat)
+            bool hasVisible =
+                _chatView
+                    .Cast<object>()
+                    .Any();
+
+            ChatList.Visibility =
+                hasVisible
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            EmptyPanel.Visibility =
+                hasVisible
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+
+            if (hasVisible)
             {
                 return;
             }
 
-            var chatView =
-                new ChatView(
-                    selectedChat,
-                    _socketService);
+            if (!string.IsNullOrWhiteSpace(
+                    SearchTextBox?.Text))
+            {
+                EmptyMessage.Text =
+                    "Không tìm thấy kết quả";
 
-            ChatContentHost.Content =
-                chatView;
+                return;
+            }
 
-            NoChatSelectedPanel.Visibility =
-                Visibility.Collapsed;
+            EmptyMessage.Text =
+                _currentMode ==
+                ListMode.Chats
+                    ? "Chưa có cuộc trò chuyện"
+                    : "Không có người dùng nào đang online";
         }
 
         // =====================================================
-        // AVATAR
+        // CHANGE MY AVATAR
         // =====================================================
 
-        private void ChangeAvatarButton_Click(
+        private async void ChangeAvatarButton_Click(
             object sender,
             RoutedEventArgs e)
         {
@@ -317,244 +527,221 @@ namespace Client.Views
                         "Chọn ảnh đại diện",
 
                     Filter =
-                        "Ảnh (*.png;*.jpg;*.jpeg;*.bmp;*.webp)|" +
-                        "*.png;*.jpg;*.jpeg;*.bmp;*.webp",
+                        "Ảnh (*.png;*.jpg;*.jpeg)|" +
+                        "*.png;*.jpg;*.jpeg",
 
                     Multiselect =
                         false
                 };
 
-            if (dialog.ShowDialog() != true)
+            if (dialog.ShowDialog()
+                != true)
             {
                 return;
             }
 
             try
             {
-                Directory.CreateDirectory(
-                    _avatarFolder);
-
-                BitmapImage bitmap =
-                    LoadBitmap(
+                byte[] bytes =
+                    File.ReadAllBytes(
                         dialog.FileName);
 
-                using FileStream stream =
-                    File.Create(
-                        _avatarFile);
+                // 1MB để demo TCP ổn định.
+                if (bytes.Length >
+                    1024 * 1024)
+                {
+                    MessageBox.Show(
+                        "Avatar tối đa 1 MB.",
+                        "Avatar",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
 
-                var encoder =
-                    new PngBitmapEncoder();
+                    return;
+                }
 
-                encoder.Frames.Add(
-                    BitmapFrame.Create(
-                        bitmap));
+                string base64 =
+                    Convert.ToBase64String(
+                        bytes);
 
-                encoder.Save(
-                    stream);
-
-                SetMyAvatar(
-                    _avatarFile);
+                await _socketService
+                    .UpdateAvatarAsync(
+                        base64);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Không thể đổi ảnh đại diện:\n"
-                    + ex.Message,
-
+                    ex.Message,
                     "Avatar",
-
                     MessageBoxButton.OK,
-
                     MessageBoxImage.Error);
             }
         }
 
-        private void LoadSavedAvatar()
-        {
-            if (File.Exists(
-                    _avatarFile))
-            {
-                SetMyAvatar(
-                    _avatarFile);
-            }
-        }
-
         private void SetMyAvatar(
-            string imagePath)
+            string? avatarData)
         {
-            BitmapImage bitmap =
-                LoadBitmap(
-                    imagePath);
+            BitmapImage? image =
+                Base64ToBitmap(
+                    avatarData);
 
-            MyAvatarBrush.ImageSource =
-                bitmap;
+            MyAvatarImage.Source =
+                image;
 
             DefaultAvatarIcon.Visibility =
-                Visibility.Collapsed;
+                image == null
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
-        private static BitmapImage LoadBitmap(
-            string path)
+        public static BitmapImage? Base64ToBitmap(
+            string? base64)
         {
-            var bitmap =
-                new BitmapImage();
+            if (string.IsNullOrWhiteSpace(
+                    base64))
+            {
+                return null;
+            }
 
-            bitmap.BeginInit();
+            try
+            {
+                byte[] bytes =
+                    Convert.FromBase64String(
+                        base64);
 
-            bitmap.CacheOption =
-                BitmapCacheOption.OnLoad;
+                using var stream =
+                    new MemoryStream(
+                        bytes);
 
-            bitmap.UriSource =
-                new Uri(
-                    path,
-                    UriKind.Absolute);
+                var bitmap =
+                    new BitmapImage();
 
-            bitmap.EndInit();
+                bitmap.BeginInit();
 
-            bitmap.Freeze();
+                bitmap.CacheOption =
+                    BitmapCacheOption.OnLoad;
 
-            return bitmap;
+                bitmap.StreamSource =
+                    stream;
+
+                bitmap.EndInit();
+
+                bitmap.Freeze();
+
+                return bitmap;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // =====================================================
-        // ONLINE STATUS
+        // SETTINGS
         // =====================================================
 
-        private void SocketService_OnUserStatusChanged(
-            Packet<UserStatusNotifyData> packet)
+        private void SettingsButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            if (packet?.Data == null)
+            if (SettingsButton.ContextMenu
+                == null)
             {
                 return;
             }
 
-            ApplyUserStatus(
-                packet.Data);
+            SettingsButton.ContextMenu
+                .PlacementTarget =
+                    SettingsButton;
+
+            SettingsButton.ContextMenu
+                .IsOpen =
+                    true;
         }
 
-        public void ApplyUserStatus(
-            UserStatusNotifyData status)
+        private void LogoutMenuItem_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            if (status == null)
+            MessageBoxResult result =
+                MessageBox.Show(
+                    "Bạn có chắc muốn đăng xuất?",
+                    "Đăng xuất",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+            if (result !=
+                MessageBoxResult.Yes)
             {
                 return;
             }
 
-            bool isOnline =
-                string.Equals(
-                    status.Status,
-                    "ONLINE",
-                    StringComparison.OrdinalIgnoreCase);
+            _socketService.Disconnect();
 
-            ChatItem? chat =
-                null;
-
-            if (!string.IsNullOrWhiteSpace(
-                    status.UserId))
-            {
-                chat =
-                    Chats.FirstOrDefault(
-                        x =>
-                            x.UserId ==
-                            status.UserId);
-            }
-
-            if (chat == null)
-            {
-                chat =
-                    Chats.FirstOrDefault(
-                        x =>
-                            string.Equals(
-                                x.Name,
-                                status.DisplayName,
-                                StringComparison.CurrentCultureIgnoreCase));
-            }
-
-            if (chat == null)
-            {
-                return;
-            }
-
-            chat.IsOnline =
-                isOnline;
+            LogoutRequested?.Invoke();
         }
 
         // =====================================================
-        // EMPTY STATE
+        // ERROR
         // =====================================================
 
-        private void UpdateEmptyState()
+        private void SocketService_OnError(
+            string message)
         {
-            bool hasVisibleChat =
-                _chatView
-                    .Cast<object>()
-                    .Any();
-
-            if (hasVisibleChat)
-            {
-                EmptyPanel.Visibility =
-                    Visibility.Collapsed;
-
-                ChatList.Visibility =
-                    Visibility.Visible;
-
-                return;
-            }
-
-            ChatList.Visibility =
-                Visibility.Collapsed;
-
-            EmptyPanel.Visibility =
-                Visibility.Visible;
-
-            if (Chats.Count > 0)
-            {
-                EmptyIconImage.Source =
-                    new BitmapImage(
-                        new Uri(
-                            "pack://application:,,,/Assets/Icon/icon_search.png",
-                            UriKind.Absolute));
-
-                EmptyMessage.Text =
-                    "Không tìm thấy liên hệ";
-            }
-            else
-            {
-                EmptyIconImage.Source =
-                    new BitmapImage(
-                        new Uri(
-                            "pack://application:,,,/Assets/Icon/icon_chat.png",
-                            UriKind.Absolute));
-
-                EmptyMessage.Text =
-                    "Chưa có cuộc trò chuyện";
-            }
+            MessageBox.Show(
+                message,
+                "TCP Chat",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
 
         // =====================================================
-        // CLEAN EVENT
+        // CLEANUP
         // =====================================================
 
         private void ContactListView_Unloaded(
             object sender,
             RoutedEventArgs e)
         {
-            if (_socketService != null)
-            {
-                _socketService.OnUserStatusChanged -=
-                    SocketService_OnUserStatusChanged;
-            }
+            _socketService.OnOnlineUsersReceived -=
+                SocketService_OnOnlineUsersReceived;
+
+            _socketService.OnConversationListReceived -=
+                SocketService_OnConversationListReceived;
+
+            _socketService.OnUserStatusChanged -=
+                SocketService_OnUserStatusChanged;
+
+            _socketService.OnUserProfileChanged -=
+                SocketService_OnUserProfileChanged;
+
+            _socketService.OnAvatarUpdated -=
+                SocketService_OnAvatarUpdated;
+
+            _socketService.OnChatMessageReceived -=
+                SocketService_OnChatMessageReceived;
+
+            _socketService.OnError -=
+                SocketService_OnError;
         }
     }
 
     // =========================================================
-    // CHAT ITEM
+    // CHAT/CONTACT UI MODEL
     // =========================================================
 
     public class ChatItem :
         INotifyPropertyChanged
     {
         private bool _isOnline;
+
+        private BitmapImage?
+            _avatarImage;
+
+        public int ConversationId
+        {
+            get;
+            set;
+        }
 
         public string UserId
         {
@@ -586,15 +773,35 @@ namespace Client.Views
             set;
         } = string.Empty;
 
-        public string? AvatarPath
+        public string? AvatarData
         {
             get;
             set;
         }
 
+        public BitmapImage? AvatarImage
+        {
+            get =>
+                _avatarImage;
+
+            set
+            {
+                if (_avatarImage == value)
+                {
+                    return;
+                }
+
+                _avatarImage =
+                    value;
+
+                OnPropertyChanged();
+            }
+        }
+
         public bool IsOnline
         {
-            get => _isOnline;
+            get =>
+                _isOnline;
 
             set
             {
@@ -603,7 +810,8 @@ namespace Client.Views
                     return;
                 }
 
-                _isOnline = value;
+                _isOnline =
+                    value;
 
                 OnPropertyChanged();
 

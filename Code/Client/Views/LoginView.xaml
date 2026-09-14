@@ -8,6 +8,7 @@
                 Padding="30"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Background="White"
                 BorderBrush="{StaticResource BorderColor}"
                 BorderThickness="1"
                 CornerRadius="12">
@@ -37,15 +38,19 @@
                              Margin="0,0,0,20"/>
 
                 <TextBlock x:Name="ErrorText"
-                           Foreground="Red"
+                           Foreground="#EF4444"
                            Visibility="Collapsed"
                            TextWrapping="Wrap"
                            Margin="0,0,0,10"/>
 
                 <Button Content="Đăng nhập"
                         Height="42"
-                        
+                        Background="#0A84FF"
+                        Foreground="White"
+                        BorderThickness="0"
                         Click="LoginButton_Click"/>
+
+                
 
             </StackPanel>
 

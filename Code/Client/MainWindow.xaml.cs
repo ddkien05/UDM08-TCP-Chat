@@ -1,7 +1,9 @@
-﻿using ChatTCP.Client.Views;
-using Client.Views;
+﻿using System.Windows;
+
 using ChatTCP.Client.Networking;
-using System.Windows;
+using ChatTCP.Common.Models;
+
+using Client.Views;
 
 namespace Client
 {
@@ -15,50 +17,32 @@ namespace Client
             ShowLogin();
         }
 
-        // =====================================================
-        // LOGIN
-        // =====================================================
-
         private void ShowLogin()
         {
-            var loginView =
+            var login =
                 new LoginView();
 
-            loginView.LoginSucceeded +=
+            login.LoginSucceeded +=
                 ShowContactList;
 
             MainContent.Content =
-                loginView;
+                login;
         }
-
-        // =====================================================
-        // CONTACT LIST
-        // =====================================================
 
         private void ShowContactList(
-            ClientSocketService socketService)
+            ClientSocketService socketService,
+            LoginResponseData currentUser)
         {
-            /*
-             * Quan trọng:
-             *
-             * Dùng lại ClientSocketService từ LoginView.
-             *
-             * Nhờ đó ContactListView nhận được
-             * USER_STATUS_NOTIFY realtime.
-             */
-            MainContent.Content =
+            var view =
                 new ContactListView(
-                    socketService);
-        }
+                    socketService,
+                    currentUser);
 
-        // =====================================================
-        // CHAT
-        // =====================================================
+            view.LogoutRequested +=
+                ShowLogin;
 
-        /*public void ShowChatView()
-        {
             MainContent.Content =
-                new ChatView();
-        }*/
+                view;
+        }
     }
 }

@@ -4,14 +4,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="650"
-             d:DesignWidth="950">
+             d:DesignHeight="720"
+             d:DesignWidth="1100">
 
-    <Grid Background="#F5F7FA">
+    <Grid Background="#F8FAFC">
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="80"/>
-            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="330"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -25,38 +25,40 @@
             <Grid>
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="90"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="80"/>
                 </Grid.RowDefinitions>
 
-                <!-- AVATAR -->
+                <!-- MY AVATAR -->
 
                 <Button Grid.Row="0"
-                        Width="54"
-                        Height="54"
+                        Width="56"
+                        Height="56"
+                        Margin="0,14,0,0"
                         Padding="0"
-                        BorderThickness="0"
                         Background="Transparent"
+                        BorderThickness="0"
                         Cursor="Hand"
-                        ToolTip="Đổi ảnh đại diện"
+                        ToolTip="Đổi avatar"
                         Click="ChangeAvatarButton_Click">
 
-                    <Grid Width="52"
-                          Height="52">
+                    <Grid Width="54"
+                          Height="54">
 
                         <Ellipse Fill="#DCEEFF"
                                  Stroke="White"
                                  StrokeThickness="2"/>
 
-                        <Ellipse>
+                        <Border Width="50"
+                                Height="50"
+                                CornerRadius="25"
+                                ClipToBounds="True">
 
-                            <Ellipse.Fill>
-                                <ImageBrush x:Name="MyAvatarBrush"
-                                            Stretch="UniformToFill"/>
-                            </Ellipse.Fill>
+                            <Image x:Name="MyAvatarImage"
+                                   Stretch="UniformToFill"/>
 
-                        </Ellipse>
+                        </Border>
 
                         <TextBlock x:Name="DefaultAvatarIcon"
                                    Text="👤"
@@ -66,15 +68,14 @@
 
                         <Border Width="18"
                                 Height="18"
-                                Background="White"
                                 CornerRadius="9"
+                                Background="White"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom">
 
-                            <Image Source="/Assets/Icon/icon_edit.png"
+                            <Image Source="pack://application:,,,/Assets/Icon/icon_edit.png"
                                    Width="11"
-                                   Height="11"
-                                   Stretch="Uniform"/>
+                                   Height="11"/>
 
                         </Border>
 
@@ -82,43 +83,61 @@
 
                 </Button>
 
-                <!-- MENU -->
+                <!-- NAVIGATION -->
 
                 <StackPanel Grid.Row="1"
-                            VerticalAlignment="Top"
-                            Margin="0,20,0,0">
+                            Margin="0,20,0,0"
+                            VerticalAlignment="Top">
 
                     <!-- CHAT -->
 
-                    <Button Width="50"
-                            Height="50"
-                            Margin="0,5"
+                    <Button Width="52"
+                            Height="52"
+                            Margin="0,4"
+                            Padding="0"
+                            Background="Transparent"
                             BorderThickness="0"
-                            Background="#30FFFFFF"
                             Cursor="Hand"
-                            ToolTip="Chat">
+                            ToolTip="Danh sách chat"
+                            Click="ChatButton_Click">
 
-                        <Image Source="/Assets/Icon/icon_chat.png"
-                               Width="28"
-                               Height="28"
-                               Stretch="Uniform"/>
+                        <Border x:Name="ChatMenuBackground"
+                                Width="42"
+                                Height="42"
+                                CornerRadius="10"
+                                Background="White">
+
+                            <Image Source="pack://application:,,,/Assets/Icon/icon_chat.png"
+                                   Width="25"
+                                   Height="25"/>
+
+                        </Border>
 
                     </Button>
 
                     <!-- CONTACTS -->
 
-                    <Button Width="50"
-                            Height="50"
-                            Margin="0,5"
-                            BorderThickness="0"
+                    <Button Width="52"
+                            Height="52"
+                            Margin="0,4"
+                            Padding="0"
                             Background="Transparent"
+                            BorderThickness="0"
                             Cursor="Hand"
-                            ToolTip="Liên hệ">
+                            ToolTip="Người đang online"
+                            Click="ContactsButton_Click">
 
-                        <Image Source="/Assets/Icon/icon_contacts.png"
-                               Width="28"
-                               Height="28"
-                               Stretch="Uniform"/>
+                        <Border x:Name="ContactsMenuBackground"
+                                Width="42"
+                                Height="42"
+                                CornerRadius="10"
+                                Background="#30FFFFFF">
+
+                            <Image Source="pack://application:,,,/Assets/Icon/icon_contacts.png"
+                                   Width="25"
+                                   Height="25"/>
+
+                        </Border>
 
                     </Button>
 
@@ -126,18 +145,39 @@
 
                 <!-- SETTINGS -->
 
-                <Button Grid.Row="2"
-                        Width="50"
-                        Height="50"
-                        BorderThickness="0"
+                <Button x:Name="SettingsButton"
+                        Grid.Row="2"
+                        Width="52"
+                        Height="52"
+                        Padding="0"
                         Background="Transparent"
+                        BorderThickness="0"
                         Cursor="Hand"
-                        ToolTip="Cài đặt">
+                        ToolTip="Cài đặt"
+                        Click="SettingsButton_Click">
 
-                    <Image Source="/Assets/Icon/icon_settings.png"
-                           Width="28"
-                           Height="28"
-                           Stretch="Uniform"/>
+                    <Button.ContextMenu>
+
+                        <ContextMenu Placement="Right">
+
+                            <MenuItem Header="Đăng xuất"
+                                      Foreground="#DC2626"
+                                      Click="LogoutMenuItem_Click"/>
+
+                        </ContextMenu>
+
+                    </Button.ContextMenu>
+
+                    <Border Width="42"
+                            Height="42"
+                            CornerRadius="10"
+                            Background="#30FFFFFF">
+
+                        <Image Source="pack://application:,,,/Assets/Icon/icon_settings.png"
+                               Width="25"
+                               Height="25"/>
+
+                    </Border>
 
                 </Button>
 
@@ -146,7 +186,7 @@
         </Border>
 
         <!-- ================================================= -->
-        <!-- CONTACT LIST -->
+        <!-- LEFT LIST -->
         <!-- ================================================= -->
 
         <Border Grid.Column="1"
@@ -157,51 +197,60 @@
             <Grid>
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="65"/>
-                    <RowDefinition Height="60"/>
+                    <RowDefinition Height="78"/>
+                    <RowDefinition Height="64"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <!-- HEADER -->
 
-                <TextBlock Grid.Row="0"
-                           Text="Danh sách chat"
-                           Margin="18,0"
-                           VerticalAlignment="Center"
-                           FontSize="21"
-                           FontWeight="Bold"
-                           Foreground="#111827"/>
+                <Grid Grid.Row="0"
+                      Margin="20,0">
+
+                    <StackPanel VerticalAlignment="Center">
+
+                        <TextBlock x:Name="ListTitleText"
+                                   Text="Danh sách chat"
+                                   FontSize="21"
+                                   FontWeight="Bold"
+                                   Foreground="#111827"/>
+
+                        <TextBlock x:Name="ListSubtitleText"
+                                   Text="Các cuộc trò chuyện gần đây"
+                                   Margin="0,3,0,0"
+                                   FontSize="11"
+                                   Foreground="#9CA3AF"/>
+
+                    </StackPanel>
+
+                </Grid>
 
                 <!-- SEARCH -->
 
                 <Grid Grid.Row="1"
-                      Margin="15,5,15,10">
+                      Margin="16,5,16,10">
 
                     <Border Background="#F3F4F6"
-                            CornerRadius="12">
+                            CornerRadius="13">
 
                         <Grid>
 
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="42"/>
+                                <ColumnDefinition Width="44"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <Image Grid.Column="0"
-                                   Source="/Assets/Icon/icon_search.png"
-                                   Width="19"
-                                   Height="19"
-                                   Stretch="Uniform"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
+                                   Source="pack://application:,,,/Assets/Icon/icon_search.png"
+                                   Width="18"
+                                   Height="18"/>
 
                             <TextBox x:Name="SearchTextBox"
                                      Grid.Column="1"
                                      BorderThickness="0"
                                      Background="Transparent"
+                                     Padding="0,0,12,0"
                                      FontSize="14"
-                                     Foreground="#111827"
-                                     Padding="4,0,10,0"
                                      VerticalContentAlignment="Center"
                                      TextChanged="SearchTextBox_TextChanged"/>
 
@@ -215,34 +264,36 @@
 
                 <Grid Grid.Row="2">
 
-                    <!-- EMPTY STATE -->
+                    <!-- EMPTY -->
 
                     <StackPanel x:Name="EmptyPanel"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
 
                         <Image x:Name="EmptyIconImage"
-                               Source="/Assets/Icon/icon_chat.png"
-                               Width="52"
-                               Height="52"
-                               Stretch="Uniform"/>
+                               Source="pack://application:,,,/Assets/Icon/icon_chat.png"
+                               Width="55"
+                               Height="55"
+                               Opacity="0.5"/>
 
                         <TextBlock x:Name="EmptyMessage"
                                    Text="Chưa có cuộc trò chuyện"
-                                   FontSize="16"
+                                   Width="230"
+                                   Margin="0,14,0,0"
+                                   FontSize="14"
                                    FontWeight="SemiBold"
-                                   Foreground="#374151"
-                                   Margin="0,12,0,0"
-                                   HorizontalAlignment="Center"/>
+                                   Foreground="#6B7280"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
 
                     </StackPanel>
 
-                    <!-- CHAT LIST -->
+                    <!-- LIST -->
 
                     <ListBox x:Name="ChatList"
                              Visibility="Collapsed"
-                             BorderThickness="0"
                              Background="Transparent"
+                             BorderThickness="0"
                              HorizontalContentAlignment="Stretch"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              SelectionChanged="ChatList_SelectionChanged">
@@ -250,9 +301,6 @@
                         <ListBox.ItemContainerStyle>
 
                             <Style TargetType="ListBoxItem">
-
-                                <Setter Property="HorizontalContentAlignment"
-                                        Value="Stretch"/>
 
                                 <Setter Property="Padding"
                                         Value="0"/>
@@ -263,8 +311,8 @@
                                 <Setter Property="BorderThickness"
                                         Value="0"/>
 
-                                <Setter Property="Background"
-                                        Value="Transparent"/>
+                                <Setter Property="HorizontalContentAlignment"
+                                        Value="Stretch"/>
 
                                 <Setter Property="Template">
 
@@ -272,9 +320,9 @@
 
                                         <ControlTemplate TargetType="ListBoxItem">
 
-                                            <Border x:Name="ItemBackground"
-                                                    Background="Transparent"
-                                                    Padding="12,8">
+                                            <Border x:Name="BackgroundBorder"
+                                                    Padding="14,10"
+                                                    Background="Transparent">
 
                                                 <ContentPresenter/>
 
@@ -285,18 +333,18 @@
                                                 <Trigger Property="IsMouseOver"
                                                          Value="True">
 
-                                                    <Setter TargetName="ItemBackground"
+                                                    <Setter TargetName="BackgroundBorder"
                                                             Property="Background"
-                                                            Value="#F3F4F6"/>
+                                                            Value="#F3F7FC"/>
 
                                                 </Trigger>
 
                                                 <Trigger Property="IsSelected"
                                                          Value="True">
 
-                                                    <Setter TargetName="ItemBackground"
+                                                    <Setter TargetName="BackgroundBorder"
                                                             Property="Background"
-                                                            Value="#E8F3FF"/>
+                                                            Value="#E6F2FF"/>
 
                                                 </Trigger>
 
@@ -316,42 +364,35 @@
 
                             <DataTemplate>
 
-                                <Grid Height="60">
+                                <Grid Height="62">
 
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="58"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="58"/>
                                     </Grid.ColumnDefinitions>
 
                                     <!-- AVATAR -->
 
                                     <Grid Grid.Column="0"
-                                          Width="46"
-                                          Height="46"
-                                          HorizontalAlignment="Left"
+                                          Width="48"
+                                          Height="48"
                                           VerticalAlignment="Center">
 
                                         <Ellipse Fill="#DCEEFF"/>
 
-                                        <!--
-                                        Không bind ImageBrush trực tiếp nữa
-                                        để tránh warning ImageSource khi AvatarPath null.
-                                        -->
-
                                         <Border Width="46"
                                                 Height="46"
-                                                CornerRadius="23">
+                                                CornerRadius="23"
+                                                ClipToBounds="True">
 
-                                            <Image Source="{Binding AvatarPath}"
+                                            <Image Source="{Binding AvatarImage}"
                                                    Stretch="UniformToFill"/>
 
                                         </Border>
 
-                                        <!-- ONLINE/OFFLINE -->
-
-                                        <Ellipse Width="12"
-                                                 Height="12"
+                                        <Ellipse Width="13"
+                                                 Height="13"
                                                  Stroke="White"
                                                  StrokeThickness="2"
                                                  HorizontalAlignment="Right"
@@ -362,7 +403,7 @@
                                                 <Style TargetType="Ellipse">
 
                                                     <Setter Property="Fill"
-                                                            Value="#EF4444"/>
+                                                            Value="#CBD5E1"/>
 
                                                     <Style.Triggers>
 
@@ -384,11 +425,11 @@
 
                                     </Grid>
 
-                                    <!-- USER INFO -->
+                                    <!-- INFO -->
 
                                     <StackPanel Grid.Column="1"
                                                 VerticalAlignment="Center"
-                                                Margin="3,0,5,0">
+                                                Margin="5,0,5,0">
 
                                         <TextBlock Text="{Binding Name}"
                                                    FontSize="15"
@@ -396,26 +437,50 @@
                                                    Foreground="#111827"
                                                    TextTrimming="CharacterEllipsis"/>
 
-                                        <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Margin="0,2,0,0">
 
                                             <TextBlock Text="{Binding Username, StringFormat=@{0}}"
                                                        FontSize="11"
-                                                       Foreground="#9CA3AF"/>
+                                                       Foreground="#94A3B8"/>
 
                                             <TextBlock Text=" · "
-                                                       FontSize="11"
-                                                       Foreground="#9CA3AF"/>
+                                                       Foreground="#CBD5E1"/>
 
                                             <TextBlock Text="{Binding StatusText}"
-                                                       FontSize="11"
-                                                       Foreground="#9CA3AF"/>
+                                                       FontSize="11">
+
+                                                <TextBlock.Style>
+
+                                                    <Style TargetType="TextBlock">
+
+                                                        <Setter Property="Foreground"
+                                                                Value="#94A3B8"/>
+
+                                                        <Style.Triggers>
+
+                                                            <DataTrigger Binding="{Binding IsOnline}"
+                                                                         Value="True">
+
+                                                                <Setter Property="Foreground"
+                                                                        Value="#22C55E"/>
+
+                                                            </DataTrigger>
+
+                                                        </Style.Triggers>
+
+                                                    </Style>
+
+                                                </TextBlock.Style>
+
+                                            </TextBlock>
 
                                         </StackPanel>
 
                                         <TextBlock Text="{Binding LastMessage}"
-                                                   FontSize="12"
-                                                   Foreground="#6B7280"
                                                    Margin="0,2,0,0"
+                                                   FontSize="12"
+                                                   Foreground="#64748B"
                                                    TextTrimming="CharacterEllipsis"/>
 
                                     </StackPanel>
@@ -424,11 +489,11 @@
 
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding Time}"
+                                               Margin="0,8,2,0"
                                                FontSize="11"
-                                               Foreground="#9CA3AF"
+                                               Foreground="#94A3B8"
                                                HorizontalAlignment="Right"
-                                               VerticalAlignment="Top"
-                                               Margin="0,8,2,0"/>
+                                               VerticalAlignment="Top"/>
 
                                 </Grid>
 
@@ -445,39 +510,39 @@
         </Border>
 
         <!-- ================================================= -->
-        <!-- CHAT AREA -->
+        <!-- CHAT HOST -->
         <!-- ================================================= -->
 
         <Grid Grid.Column="2"
-              Background="#F5F7FA">
-
-            <!-- DEFAULT -->
+              Background="#F8FAFC">
 
             <StackPanel x:Name="NoChatSelectedPanel"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
 
-                <Image Source="/Assets/Icon/icon_chat.png"
-                       Width="64"
-                       Height="64"
-                       Stretch="Uniform"/>
+                <Border Width="100"
+                        Height="100"
+                        CornerRadius="50"
+                        Background="#EAF4FF">
+
+                    <Image Source="pack://application:,,,/Assets/Icon/icon_chat.png"
+                           Width="55"
+                           Height="55"/>
+
+                </Border>
 
                 <TextBlock Text="Chọn một cuộc trò chuyện"
-                           FontSize="19"
+                           Margin="0,17,0,0"
+                           FontSize="20"
                            FontWeight="SemiBold"
-                           Foreground="#374151"
-                           Margin="0,14,0,0"
-                           HorizontalAlignment="Center"/>
+                           Foreground="#374151"/>
 
-                <TextBlock Text="Chọn một người trong danh sách để bắt đầu chat"
-                           FontSize="13"
-                           Foreground="#9CA3AF"
+                <TextBlock Text="Chọn một người bên trái để bắt đầu nhắn tin."
                            Margin="0,7,0,0"
-                           HorizontalAlignment="Center"/>
+                           FontSize="13"
+                           Foreground="#9CA3AF"/>
 
             </StackPanel>
-
-            <!-- CHAT VIEW -->
 
             <ContentControl x:Name="ChatContentHost"/>
 
