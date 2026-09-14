@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
+using ChatTCP.Client.Networking;
 
 namespace ChatTCP.Client.ViewModels
 {
@@ -73,17 +74,17 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Sends a regular chat message to the specified target.
-        /// The message is wrapped in a Packet with CHAT_MSG type and sent via socket.
+        /// Gửi một tin nhắn chat thông thường tới một người nhận cụ thể.
+        /// Tin nhắn sẽ được đóng gói trong một đối tượng Packet với Type là "CHAT_MSG" và gửi qua socket.
         /// 
-        /// Protocol: Packet&lt;ChatMessageData&gt;
+        /// Giao thức: Packet&lt;ChatMessageData&gt;
         ///   - Type: "CHAT_MSG"
-        ///   - Data contains: MsgId, TargetType, TargetId, Sender, Content
+        ///   - Data chứa: MsgId, TargetType, TargetId, Sender, Content
         /// </summary>
-        /// <param name="targetId">Recipient user ID or group ID</param>
-        /// <param name="targetType">Message target type (PRIVATE, GROUP, BROADCAST)</param>
-        /// <param name="content">Message content text</param>
-        /// <returns>Task that completes when message is sent to server</returns>
+        /// <param name="targetId">ID của người nhận hoặc ID của nhóm</param>
+        /// <param name="content">Nội dung tin nhắn</param>
+        /// <param name="targetType">Loại đối tượng nhận tin (PRIVATE, GROUP, BROADCAST)</param>
+        /// <returns>Task hoàn thành khi tin nhắn được gửi tới server</returns>
         public async Task SendMessageAsync(string targetId, string content, string targetType = "PRIVATE")
         {
             if (string.IsNullOrWhiteSpace(content)) return;
@@ -131,17 +132,17 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Sends a reply message in response to a specific message.
-        /// The reply maintains a reference to the original message via ReplyInfo.
+        /// Gửi một tin nhắn dạng trả lời (reply) tới một tin nhắn cụ thể trước đó.
+        /// Tin nhắn reply sẽ chứa thông tin tham chiếu tới tin nhắn gốc thông qua thuộc tính ReplyInfo.
         /// 
-        /// Protocol: Same as SendMessageAsync, but Data.ReplyTo is populated
-        ///   - ReplyInfo contains: MsgId (of original), SenderName, ContentSnippet
+        /// Giao thức: Tương tự SendMessageAsync, nhưng thuộc tính Data.ReplyTo sẽ được điền thông tin
+        ///   - ReplyInfo chứa: MsgId (của tin gốc), SenderName (tên người gửi gốc), ContentSnippet (trích dẫn nội dung gốc)
         /// </summary>
-        /// <param name="targetId">Recipient user ID</param>
-        /// <param name="replyToMsgId">Message ID being replied to</param>
-        /// <param name="replySenderName">Name of the original sender</param>
-        /// <param name="replySnippet">Short excerpt from the original message</param>
-        /// <param name="content">Reply message text</param>
+        /// <param name="targetId">ID người nhận</param>
+        /// <param name="replyToMsgId">ID của tin nhắn đang được trả lời</param>
+        /// <param name="replySenderName">Tên người gửi của tin nhắn gốc</param>
+        /// <param name="replySnippet">Đoạn trích dẫn ngắn từ tin nhắn gốc</param>
+        /// <param name="content">Nội dung câu trả lời</param>
         public async Task SendReplyAsync(string targetId, string replyToMsgId, string replySenderName, string replySnippet, string content)
         {
             if (string.IsNullOrWhiteSpace(content)) return;
@@ -174,14 +175,14 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Sends a forwarded message to a new recipient.
-        /// The forwarded flag indicates this message comes from another sender.
+        /// Gửi một tin nhắn được chuyển tiếp (forward) tới một người nhận mới.
+        /// Cờ IsForwarded sẽ được bật để hiển thị đây là tin nhắn chuyển tiếp.
         /// 
-        /// Protocol: Same as SendMessageAsync, but IsForwarded = true and ForwardFromName is set
+        /// Giao thức: Tương tự SendMessageAsync, nhưng có IsForwarded = true và ForwardFromName được gán
         /// </summary>
-        /// <param name="targetId">New recipient user ID</param>
-        /// <param name="originalContent">Content of the message being forwarded</param>
-        /// <param name="forwardFromName">Name of the original sender</param>
+        /// <param name="targetId">ID người nhận mới</param>
+        /// <param name="originalContent">Nội dung của tin nhắn đang được chuyển tiếp</param>
+        /// <param name="forwardFromName">Tên của người gửi gốc của tin nhắn</param>
         public async Task SendForwardAsync(string targetId, string originalContent, string forwardFromName)
         {
             if (string.IsNullOrWhiteSpace(originalContent)) return;
@@ -210,12 +211,12 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Sends a broadcast message to all connected users.
-        /// Sets TargetType to BROADCAST, implying server will distribute to all clients.
+        /// Gửi một tin nhắn phát thanh (broadcast) tới toàn bộ người dùng đang kết nối.
+        /// Đặt TargetType thành BROADCAST để server tự phân phối tin nhắn này.
         /// 
-        /// Protocol: Same structure as CHAT_MSG, but TargetType = "BROADCAST"
+        /// Giao thức: Giống cấu trúc CHAT_MSG, nhưng TargetType = "BROADCAST" và TargetId = "*"
         /// </summary>
-        /// <param name="content">Message content to broadcast</param>
+        /// <param name="content">Nội dung tin nhắn phát thanh</param>
         public async Task SendBroadcastAsync(string content)
         {
             if (string.IsNullOrWhiteSpace(content)) return;
@@ -242,16 +243,16 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Loads older messages when the user scrolls to the top of chat history.
-        /// This is a placeholder for MVP; in production, load from database or server.
+        /// Tải thêm các tin nhắn cũ khi người dùng cuộn lên trên cùng của khung chat.
+        /// Hiện tại lấy dữ liệu từ hàng đợi giả lập _historyQueue. 
+        /// Trong hệ thống thực tế sẽ gọi API hoặc truy vấn DB.
         /// 
-        /// Current implementation:
-        /// - Loads from in-memory _historyQueue (populated by LoadFakeHistory)
-        /// - Limits to HistoryPageSize (20) messages per load
-        /// - Prevents concurrent loads with IsLoadingHistory flag
-        /// - Prepends older messages to the Messages collection
+        /// Cơ chế:
+        /// - Lấy tối đa HistoryPageSize (20) tin nhắn mỗi lần.
+        /// - Chặn gọi nhiều lần cùng lúc qua cờ IsLoadingHistory.
+        /// - Chèn tin nhắn cũ vào đầu danh sách Messages.
         /// </summary>
-        /// <returns>True if history loaded, false if no more history available</returns>
+        /// <returns>Trả về True nếu tải thành công, False nếu hết lịch sử</returns>
         public async Task<bool> LoadHistoryAsync()
         {
             if (IsLoadingHistory) return false;

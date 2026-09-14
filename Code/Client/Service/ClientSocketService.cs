@@ -131,21 +131,21 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Sends a generic packet to the server.
-        /// Used internally by SendChatMessageAsync and other type-specific methods.
+        /// Gửi một gói tin (packet) bất kỳ tới server.
+        /// Hàm này được dùng nội bộ bởi SendChatMessageAsync và các hàm gửi loại tin khác.
         /// 
-        /// Protocol:
-        /// - Packet is serialized to JSON
-        /// - Message length header is prepended (via MessageProtocol)
-        /// - Data is sent over TCP stream
+        /// Giao thức:
+        /// - Packet được tuần tự hóa thành JSON
+        /// - Độ dài thông điệp được nối vào đầu (thông qua MessageProtocol)
+        /// - Dữ liệu được đẩy qua TCP stream
         /// 
-        /// Error Handling:
-        /// - Exceptions trigger Disconnect() to clean up state
-        /// - OnError event is raised with error details
+        /// Xử lý lỗi:
+        /// - Nếu có Exception sẽ tự động gọi Disconnect() để dọn dẹp state
+        /// - Bắn ra sự kiện OnError kèm chi tiết lỗi
         /// </summary>
-        /// <typeparam name="T">Type of packet data (e.g., ChatMessageData, ErrorData)</typeparam>
-        /// <param name="packet">Packet object to send</param>
-        /// <returns>Task that completes when packet is written to stream</returns>
+        /// <typeparam name="T">Kiểu dữ liệu của packet (ví dụ: ChatMessageData, ErrorData)</typeparam>
+        /// <param name="packet">Đối tượng Packet cần gửi</param>
+        /// <returns>Task hoàn thành khi gói tin đã ghi xong vào stream</returns>
         public async Task SendPacketAsync<T>(Packet<T> packet)
         {
             if (!IsConnected || _stream == null) throw new InvalidOperationException("Not connected");
@@ -163,30 +163,21 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// High-level convenience method to send a chat message.
-        /// Wraps ChatMessageData in a Packet with type "CHAT_MSG" and sends via socket.
+        /// Hàm tiện ích bậc cao để gửi một tin nhắn chat.
+        /// Tự động đóng gói ChatMessageData vào Packet với loại "CHAT_MSG" và gửi qua socket.
         /// 
-        /// Message Types Supported:
-        /// - PRIVATE: Single recipient (data.TargetId = recipient UserId)
-        /// - BROADCAST: All connected users (data.TargetId = "*")
-        /// - GROUP: Group message (data.TargetId = group ID)
+        /// Các loại tin nhắn hỗ trợ:
+        /// - PRIVATE: Tin nhắn riêng cho 1 người (TargetId = UserId người nhận)
+        /// - BROADCAST: Gửi tới tất cả người dùng kết nối (TargetId = "*")
+        /// - GROUP: Tin nhắn nhóm (TargetId = Group ID)
         /// 
-        /// Special Handling:
-        /// - If message has ReplyTo set, server processes as reply to original message
-        /// - If IsForwarded = true, server marks as forwarded message
-        /// - Timestamp is auto-set to current server time
-        /// 
-        /// Example:
-        ///   var msg = new ChatMessageData { 
-        ///       Content = "Hello!",
-        ///       TargetType = "PRIVATE", 
-        ///       TargetId = "user_102",
-        ///       Sender = new SenderInfo { ... }
-        ///   };
-        ///   await service.SendChatMessageAsync(msg);
+        /// Xử lý đặc biệt:
+        /// - Nếu tin nhắn có gán ReplyTo, server sẽ xử lý đây là tin trả lời
+        /// - Nếu IsForwarded = true, server sẽ đánh dấu đây là tin chuyển tiếp
+        /// - Timestamp được tự động gán là thời gian hiện tại
         /// </summary>
-        /// <param name="data">Chat message data to send</param>
-        /// <returns>Task that completes when message is sent to server</returns>
+        /// <param name="data">Dữ liệu tin nhắn cần gửi</param>
+        /// <returns>Task hoàn thành khi gửi thành công tới server</returns>
         public async Task SendChatMessageAsync(ChatMessageData data)
         {
             var packet = new Packet<ChatMessageData>
@@ -201,26 +192,20 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Background task that continuously receives and processes packets from server.
-        /// Runs on a separate thread to avoid blocking the UI thread.
+        /// Vòng lặp chạy ngầm để liên tục nhận và xử lý các gói tin từ server.
+        /// Chạy trên một luồng riêng (Threadpool) để không làm block UI thread.
         /// 
-        /// Packet Routes:
-        /// - "CHAT_MSG" → OnChatMessageReceived (includes replies, forwards, broadcasts)
-        /// - "BROADCAST" → OnBroadcastReceived (if separate, otherwise same as CHAT_MSG)
-        /// - "ERROR" → OnError event with error message
-        /// - Others → logged and ignored (extensible for future types)
+        /// Phân loại gói tin:
+        /// - "CHAT_MSG" → Gắn vào OnChatMessageReceived (bao gồm cả reply, forward, broadcast)
+        /// - "BROADCAST" → Gắn vào OnBroadcastReceived 
+        /// - "ERROR" → Bắn event OnError hiển thị thông báo lỗi
         /// 
-        /// Error Handling:
-        /// - Malformed JSON is logged but doesn't crash the loop
-        /// - Stream errors (disconnect) break the loop and trigger Disconnect()
-        /// - Ensures graceful shutdown even with partial/corrupted data
-        /// 
-        /// Threading:
-        /// - Runs on ThreadPool thread
-        /// - Uses Dispatcher to invoke callbacks on UI thread
-        /// - Observable to cancellation token for clean shutdown
+        /// Xử lý lỗi:
+        /// - Nếu JSON bị lỗi định dạng, sẽ bỏ qua mà không làm chết vòng lặp.
+        /// - Lỗi stream (ngắt kết nối) sẽ tự thoát vòng lặp và gọi Disconnect()
+        /// - Đồng bộ UI thread an toàn thông qua Dispatcher.
         /// </summary>
-        /// <param name="token">Cancellation token to stop the receive loop</param>
+        /// <param name="token">Cancellation token để có thể ngắt vòng lặp nhận</param>
         private async Task ReceiveLoopAsync(CancellationToken token)
         {
             if (_stream == null) return;

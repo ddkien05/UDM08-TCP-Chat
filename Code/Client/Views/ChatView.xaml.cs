@@ -13,6 +13,8 @@ namespace ChatTCP.Client.Views
     public partial class ChatView : UserControl
     {
         private readonly ClientSocketService? _socketService;
+        public ViewModels.ChatViewModel ViewModel { get; }
+        
         private string? _replyMsgId;
         private string? _replySenderName;
         private string? _replySnippet;
@@ -32,36 +34,53 @@ namespace ChatTCP.Client.Views
         {
             InitializeComponent();
             _socketService = new ClientSocketService(Dispatcher);
+            ViewModel = new ViewModels.ChatViewModel(_socketService, Dispatcher);
+            this.DataContext = ViewModel;
 
-            // Subscribe to received messages to update UI and auto-scroll
-            if (_socketService != null)
+            // Load một ít fake history ban đầu để test tính năng cuộn
+            ViewModel.LoadFakeHistory(30);
+
+            // Gắn event để auto scroll xuống dưới khi có tin nhắn mới (chỉ scroll nếu đang ở đáy)
+            ViewModel.Messages.CollectionChanged += (s, e) =>
             {
-                _socketService.OnChatMessageReceived += OnChatMessageReceived;
-            }
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+                {
+                    // Nếu là tin nhắn mới thêm vào cuối, ta scroll to bottom
+                    if (e.NewStartingIndex == ViewModel.Messages.Count - 1)
+                    {
+                        ScrollToBottom();
+                    }
+                }
+            };
 
             PopulateEmojis();
         }
 
-        /// <summary>
-        /// Handles received chat messages from the socket service
-        /// </summary>
-        private void OnChatMessageReceived(Packet<ChatMessageData> packet)
+        private async void MessageScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            try
+            // Kiểm tra xem user có cuộn chạm đỉnh (VerticalOffset == 0) và cuộn có ý nghĩa (Change < 0)
+            if (e.VerticalChange < 0 && e.VerticalOffset == 0)
             {
-                if (packet?.Data != null)
+                if (!ViewModel.IsLoadingHistory)
                 {
-                    // Append received message to UI
-                    AppendReceivedMessageToUi(packet.Data);
-                    // Auto-scroll to show the newly received message
-                    ScrollToBottom();
+                    // Ghi nhớ vị trí height hiện tại của nội dung
+                    double oldHeight = MessageScrollViewer.ExtentHeight;
+                    
+                    bool loaded = await ViewModel.LoadHistoryAsync();
+                    
+                    if (loaded)
+                    {
+                        // Sau khi nạp thêm vào đầu, ExtentHeight sẽ tăng lên. 
+                        // Ta cần cuộn xuống một khoảng bằng độ tăng của height để giữ nguyên vị trí mắt nhìn.
+                        MessageScrollViewer.UpdateLayout();
+                        double newHeight = MessageScrollViewer.ExtentHeight;
+                        MessageScrollViewer.ScrollToVerticalOffset(newHeight - oldHeight);
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error handling received message: {ex.Message}");
-            }
         }
+
+        // Các hàm xử lý giao diện từ SocketService cũ (OnChatMessageReceived) đã được xóa bỏ vì ViewModel tự handle.
 
         /// <summary>
         /// Scrolls the message scroll viewer to the bottom to show the latest message
@@ -86,33 +105,19 @@ namespace ChatTCP.Client.Views
             string content = MessageInputBox.Text;
             if (string.IsNullOrWhiteSpace(content)) return;
 
-            var data = new ChatMessageData
-            {
-                MsgId = Guid.NewGuid().ToString(),
-                TargetType = "PRIVATE",
-                TargetId = string.Empty, // Integrate with conversation id if available
-                Sender = new SenderInfo { UserId = string.Empty, DisplayName = "Me" },
-                Content = content,
-                ReplyTo = _replyMsgId != null ? new ReplyInfo { MsgId = _replyMsgId, SenderName = _replySenderName ?? string.Empty, ContentSnippet = _replySnippet ?? string.Empty } : null,
-                IsForwarded = _isForward,
-                ForwardFromName = _forwardFromName
-            };
+            string targetId = "user_test"; // Lấy từ contact list thực tế
 
-            try
+            if (_replyMsgId != null)
             {
-                if (_socketService != null && _socketService.IsConnected)
-                {
-                    await _socketService.SendChatMessageAsync(data);
-                }
-                else
-                {
-                    // Not connected: append message to UI for demo/optimistic feedback
-                    AppendSentMessageToUi(data);
-                }
+                await ViewModel.SendReplyAsync(targetId, _replyMsgId, _replySenderName ?? "", _replySnippet ?? "", content);
             }
-            catch (Exception ex)
+            else if (_isForward)
             {
-                Console.WriteLine("Send error: " + ex.Message);
+                await ViewModel.SendForwardAsync(targetId, content, _forwardFromName ?? "");
+            }
+            else
+            {
+                await ViewModel.SendMessageAsync(targetId, content);
             }
 
             // Reset composer state
@@ -254,87 +259,6 @@ namespace ChatTCP.Client.Views
             return string.Empty;
         }
 
-        private void AppendSentMessageToUi(ChatMessageData data)
-        {
-            var border = new Border
-            {
-                Background = (System.Windows.Media.Brush)FindResource("PrimaryBrush"),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(12,8,12,8),
-                Margin = new Thickness(0,4,0,4),
-                HorizontalAlignment = HorizontalAlignment.Right,
-                MaxWidth = 300
-            };
-
-            var tb = new TextBlock
-            {
-                Text = data.Content,
-                TextWrapping = TextWrapping.Wrap,
-                FontFamily = (System.Windows.Media.FontFamily)FindResource("AppFontFamily"),
-                FontSize = 14,
-                Foreground = System.Windows.Media.Brushes.White
-            };
-
-            border.Child = tb;
-            // add context menu to new message
-            var cm = new ContextMenu();
-            var mi1 = new MenuItem { Header = "Reply" };
-            mi1.Click += ReplyMenu_Click;
-            var mi2 = new MenuItem { Header = "Forward" };
-            mi2.Click += ForwardMenu_Click;
-            cm.Items.Add(mi1);
-            cm.Items.Add(mi2);
-            border.ContextMenu = cm;
-
-            MessageStack.Children.Add(border);
-
-            // Auto-scroll to bottom to show the newly added message
-            ScrollToBottom();
-        }
-
-        private void AppendReceivedMessageToUi(ChatMessageData data)
-        {
-            var border = new Border
-            {
-                Background = (System.Windows.Media.Brush)FindResource("SecondaryBubbleBrush"),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(12, 8, 12, 8),
-                Margin = new Thickness(0, 4, 0, 4),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                MaxWidth = 300
-            };
-
-            var tb = new TextBlock
-            {
-                Text = data.Content,
-                TextWrapping = TextWrapping.Wrap,
-                FontFamily = (System.Windows.Media.FontFamily)FindResource("AppFontFamily"),
-                FontSize = 14
-            };
-
-            border.Child = tb;
-
-            // add context menu to received message
-            var cm = new ContextMenu();
-            var mi1 = new MenuItem { Header = "Reply" };
-            mi1.Click += ReplyMenu_Click;
-            var mi2 = new MenuItem { Header = "Forward" };
-            mi2.Click += ForwardMenu_Click;
-            cm.Items.Add(mi1);
-            cm.Items.Add(mi2);
-            border.ContextMenu = cm;
-
-            MessageStack.Children.Add(border);
-
-            // Add timestamp
-            var timestamp = new TextBlock
-            {
-                Text = DateTime.Now.ToString("HH:mm"),
-                Style = (System.Windows.Style)FindResource("Caption"),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new Thickness(4, 0, 0, 8)
-            };
-            MessageStack.Children.Add(timestamp);
-        }
+        // Đã xóa AppendSentMessageToUi và AppendReceivedMessageToUi vì đã dùng Data Binding MVVM
     }
 }

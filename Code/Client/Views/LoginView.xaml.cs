@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Xps;
@@ -37,6 +37,18 @@ namespace ChatTCP.Client.Views
                 return;
             }
 
+            string serverIp = ServerIpTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(serverIp))
+            {
+                serverIp = "127.0.0.1";
+            }
+
+            if (!int.TryParse(PortTextBox.Text.Trim(), out int port))
+            {
+                ShowError("Cổng (Port) không hợp lệ. Vui lòng nhập số.");
+                return;
+            }
+
             ErrorText.Visibility = Visibility.Collapsed;
 
             try
@@ -48,15 +60,11 @@ namespace ChatTCP.Client.Views
                     loginButton.Content = "Đang kết nối...";
                 }
 
-                bool connected = await _socketService.ConnectAsync(
-                    "127.0.0.1",
-                    9000
-                );
+                bool connected = await _socketService.ConnectAsync(serverIp, port);
 
                 if (!connected)
                 {
                     ShowError("Không thể kết nối tới Server.");
-
                     return;
                 }
 
