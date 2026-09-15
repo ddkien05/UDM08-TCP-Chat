@@ -6,6 +6,7 @@ using System.Text.Json;
 using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Services;
+using ChatTCP.Server.Data;
 
 namespace ChatTCP.Server.Networking;
 
@@ -18,7 +19,8 @@ class MessageTestServer
         Console.OutputEncoding = Encoding.UTF8;
         int port = 8888;
 
-        var router = new MessageRouter(_clients);
+        IMessageRepository messageRepository = new MessageRepository();
+        var router = new MessageRouter(_clients, messageRepository);
         var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
 

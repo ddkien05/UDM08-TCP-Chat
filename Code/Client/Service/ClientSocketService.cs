@@ -10,21 +10,21 @@ using ChatTCP.Common.Protocol;
 namespace ChatTCP.Client.Networking
 {
     /// <summary>
-    /// ClientSocketService manages TCP socket communication for the WPF chat client.
+    /// ClientSocketService quản lý giao tiếp TCP socket cho ứng dụng chat WPF.
     /// 
-    /// Responsibilities:
-    /// - Establish/disconnect TCP connections to the chat server
-    /// - Send and receive packets (AUTH_REQ, CHAT_MSG, BROADCAST, ERROR, etc.)
-    /// - Run a background receive loop to handle incoming messages
-    /// - Dispatch events on the UI thread for safe collection updates
+    /// Trách nghiệm vụ:
+    /// - Thiết lập/ngắt kết nối TCP tới server chat
+    /// - Gửi và nhận các gói tin (AUTH_REQ, CHAT_MSG, BROADCAST, ERROR, v.v.)
+    /// - Chạy vòng lặp nhận tin nhắn nền để xử lý các tin nhắn đến
+    /// - Phát sự kiện trên luồng UI để cập nhật an toàn cho các collection
     /// 
-    /// Key Features:
-    /// - Thread-safe event dispatching via WPF Dispatcher
-    /// - Async/await pattern for non-blocking I/O
-    /// - Automatic reconnection on send failures
-    /// - Support for multiple message types: regular, reply, forward, broadcast
+    /// Tính năng chính:
+    /// - Phát sự kiện an toàn luồng thông qua WPF Dispatcher
+    /// - Mẫu async/await cho I/O không bị chặn
+    /// - Tự động kết nối lại khi gửi thất bại
+    /// - Hỗ trợ nhiều loại tin nhắn: thường, trả lời, chuyển tiếp, broadcast
     /// 
-    /// Usage:
+    /// Cách sử dụng:
     ///   var service = new ClientSocketService(Dispatcher.CurrentDispatcher);
     ///   await service.ConnectAsync("127.0.0.1", 9000);
     ///   service.OnChatMessageReceived += HandleMessage;
@@ -46,41 +46,41 @@ namespace ChatTCP.Client.Networking
             _client != null && _client.Connected && _stream != null;
 
         /// <summary>
-        /// Fired when a regular CHAT_MSG packet is received from server.
-        /// Includes Reply, Forward, and standard message types.
+        /// Bắn khi nhận được gói tin CHAT_MSG thường từ server.
+        /// Bao gồm cả loại Reply, Forward và tin nhắn tiêu chuẩn.
         /// </summary>
         public event Action<Packet<ChatMessageData>>? OnChatMessageReceived;
 
         /// <summary>
-        /// Fired when a BROADCAST packet is received (message from server to all clients).
+        /// Bắn khi nhận được gói tin BROADCAST (tin nhắn từ server gửi tới tất cả client).
         /// </summary>
         public event Action<Packet<ChatMessageData>>? OnBroadcastReceived;
 
         /// <summary>
-        /// Fired when an ERROR packet is received or a connection error occurs.
+        /// Bắn khi nhận được gói tin ERROR hoặc xảy ra lỗi kết nối.
         /// </summary>
         public event Action<string>? OnError;
 
         /// <summary>
-        /// Fired when the connection is closed or lost.
+        /// Bắn khi kết nối bị đóng hoặc mất.
         /// </summary>
         public event Action? OnDisconnected;
 
         /// <summary>
-        /// Establishes a TCP connection to the chat server and starts the receive loop.
+        /// Thiết lập kết nối TCP tới server chat và bắt đầu vòng lặp nhận tin.
         /// 
-        /// Protocol Flow:
-        /// 1. Connect via TCP to host:port
-        /// 2. Start background receive loop that parses incoming packets
-        /// 3. Server typically responds with AUTH_RSP after initial connection
+        /// Quy trình giao thức:
+        /// 1. Kết nối qua TCP đến host:port
+        /// 2. Khởi động vòng lặp nhận tin nhắn nền để phân tích các gói tin đến
+        /// 3. Server thường phản hồi bằng AUTH_RSP sau kết nối ban đầu
         /// 
-        /// Error Handling:
-        /// - Connection failures invoke OnError and return false
-        /// - Receive loop exits automatically on stream errors
+        /// Xử lý lỗi:
+        /// - Lỗi kết nối gọi OnError và trả về false
+        /// - Vòng lặp nhận tự thoát khi có lỗi stream
         /// </summary>
-        /// <param name="host">Server IP address (default: localhost)</param>
-        /// <param name="port">Server TCP port (default: 9000)</param>
-        /// <returns>True if connection successful, false if failed</returns>
+        /// <param name="host">Địa chỉ IP server (mặc định: localhost)</param>
+        /// <param name="port">Cổng TCP server (mặc định: 9000)</param>
+        /// <returns>True nếu kết nối thành công, false nếu thất bại</returns>
         public async Task<bool> LoginAsync(string host, int port, string username, string password)
         {
             try
@@ -91,7 +91,7 @@ namespace ChatTCP.Client.Networking
                 await _client.ConnectAsync(host, port);
                 _stream = _client.GetStream();
 
-                // Gửi yêu cầu đăng nhập
+                    // Gửi yêu cầu đăng nhập
                 var loginPacket = new Packet<object>
                 {
                     Type = "LOGIN_REQ",
@@ -138,8 +138,8 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Closes the TCP connection and cancels the receive loop.
-        /// Safe to call multiple times.
+        /// Đóng kết nối TCP và hủy vòng lặp nhận tin.
+        /// Có thể gọi nhiều lần một cách an toàn.
         /// </summary>
         public void Disconnect()
         {
@@ -189,7 +189,7 @@ namespace ChatTCP.Client.Networking
         {
             if (!IsConnected || _stream == null)
             {
-                throw new InvalidOperationException("Not connected");
+                throw new InvalidOperationException("Chưa kết nối");
             }
 
             try
@@ -300,38 +300,29 @@ namespace ChatTCP.Client.Networking
                             break;
 
                         case "AUTH_RSP":
-                            // Authentication response - could fire separate event
-                            Console.WriteLine("Auth response received");
+                            Console.WriteLine("Đã nhận phản hồi xác thực");
                             break;
 
                         default:
-                            // Future packet types can be added here
                             break;
-                        try
-                        {
-                            var chatPacket =
-                                JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
+                    }
 
-                            if (chatPacket != null)
-                            {
-                                InvokeOnUI(() =>
-                                    OnChatMessageReceived?.Invoke(chatPacket));
-                            }
-                        }
-                        catch (Exception ex)
+                    // Parse ChatMessageData
+                    try
+                    {
+                        var chatPacket =
+                            JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
+
+                        if (chatPacket != null)
                         {
-                            RaiseError(
-                                $"Receive parse error: {ex.Message}");
+                            InvokeOnUI(() =>
+                                OnChatMessageReceived?.Invoke(chatPacket));
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // Có thể mở rộng xử lý:
-                        // LOGIN_RES
-                        // REGISTER_RES
-                        // CONTACT_LIST_RES
-                        // USER_SEARCH_RES
-                        // AVATAR_RES
+                        RaiseError(
+                            $"Receive parse error: {ex.Message}");
                     }
                 }
             }
@@ -352,10 +343,9 @@ namespace ChatTCP.Client.Networking
                 Disconnect();
             }
         }
-
         /// <summary>
-        /// Routes a CHAT_MSG packet to the OnChatMessageReceived event.
-        /// Parses the raw JSON and validates before invoking.
+        /// Chuyển hướng gói tin CHAT_MSG tới sự kiện OnChatMessageReceived.
+        /// Phân tích JSON thô và xác thực trước khi gọi.
         /// </summary>
         private void HandleChatMessage(string raw)
         {
@@ -374,8 +364,8 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Routes a BROADCAST packet to the OnBroadcastReceived event.
-        /// Similar to HandleChatMessage but for broadcast messages.
+        /// Chuyển hướng gói tin BROADCAST tới sự kiện OnBroadcastReceived.
+        /// Tương tự HandleChatMessage nhưng dành cho tin nhắn broadcast.
         /// </summary>
         private void HandleBroadcast(string raw)
         {
@@ -394,8 +384,8 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Routes an ERROR packet to the OnError event.
-        /// Extracts error code and message for display to user.
+        /// Chuyển hướng gói tin ERROR tới sự kiện OnError.
+        /// Trích xuất mã lỗi và thông báo để hiển thị cho người dùng.
         /// </summary>
         private void HandleError(string raw)
         {
@@ -414,13 +404,13 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Invokes an action on the UI thread if Dispatcher is available.
-        /// Otherwise executes on thread pool.
+        /// Gọi một hành động trên luồng UI nếu Dispatcher có sẵn.
+        /// Ngược lại thực thi trên thread pool.
         /// 
-        /// This ensures thread-safe updates to UI collections and controls.
-        /// Called by all event-raising methods to guarantee UI thread execution.
+        /// Đảm bảo cập nhật an toàn cho các collection và điều khiển UI.
+        /// Được gọi bởi tất cả các phương thức phát sự kiện để đảm bảo thực thi trên luồng UI.
         /// </summary>
-        /// <param name="action">Callback to invoke on UI thread</param>
+        /// <param name="action">Hàm callback để gọi trên luồng UI</param>
         private void InvokeOnUI(Action action)
         {
             if (_dispatcher != null)
@@ -443,7 +433,7 @@ namespace ChatTCP.Client.Networking
             }
             else
             {
-                // No Dispatcher, execute on threadpool
+                // Không có Dispatcher, thực thi trên threadpool
                 try { Task.Run(action); } catch { }
                 try
                 {
@@ -456,10 +446,10 @@ namespace ChatTCP.Client.Networking
         }
 
         /// <summary>
-        /// Raises the OnError event with the given message.
-        /// Always executed on UI thread via InvokeOnUI.
+        /// Gửi sự kiện OnError với thông báo được chỉ định.
+        /// Luôn thực thi trên luồng UI thông qua InvokeOnUI.
         /// </summary>
-        /// <param name="message">Error message to report</param>
+        /// <param name="message">Thông báo lỗi cần báo cáo</param>
         private void RaiseError(string message)
         {
             InvokeOnUI(() =>

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
+using ChatTCP.Common.Models;
 
 namespace ChatTCP.Server.Services
 {
