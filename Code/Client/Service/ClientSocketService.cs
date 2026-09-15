@@ -37,12 +37,8 @@ namespace ChatTCP.Client.Networking
         private CancellationTokenSource? _cts;
         private readonly Dispatcher? _dispatcher;
 
-<<<<<<< HEAD
-        public ClientSocketService(Dispatcher? dispatcher = null) {
-=======
         public ClientSocketService(Dispatcher? dispatcher = null)
         {
->>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             _dispatcher = dispatcher;
         }
 
@@ -203,12 +199,7 @@ namespace ChatTCP.Client.Networking
             catch (Exception ex)
             {
                 RaiseError($"Send error: {ex.Message}");
-<<<<<<< HEAD
-                // Handle as disconnection
-=======
-
                 // Xử lý như đã mất kết nối
->>>>>>> f87406ee404b767d41992a84972afdc0635611fc
                 Disconnect();
             }
         }
@@ -296,7 +287,6 @@ namespace ChatTCP.Client.Networking
                     // Route packet based on type
                     switch (basePacket.Type)
                     {
-<<<<<<< HEAD
                         case "CHAT_MSG":
                             HandleChatMessage(raw);
                             break;
@@ -317,7 +307,6 @@ namespace ChatTCP.Client.Networking
                         default:
                             // Future packet types can be added here
                             break;
-=======
                         try
                         {
                             var chatPacket =
@@ -343,7 +332,6 @@ namespace ChatTCP.Client.Networking
                         // CONTACT_LIST_RES
                         // USER_SEARCH_RES
                         // AVATAR_RES
->>>>>>> f87406ee404b767d41992a84972afdc0635611fc
                     }
                 }
             }
@@ -455,10 +443,8 @@ namespace ChatTCP.Client.Networking
             }
             else
             {
-<<<<<<< HEAD
                 // No Dispatcher, execute on threadpool
                 try { Task.Run(action); } catch { }
-=======
                 try
                 {
                     Task.Run(action);
@@ -466,7 +452,6 @@ namespace ChatTCP.Client.Networking
                 catch
                 {
                 }
->>>>>>> f87406ee404b767d41992a84972afdc0635611fc
             }
         }
 
