@@ -19,6 +19,8 @@ public class Packet<T>
 public class AuthRequestData
 {
     [JsonPropertyName("username")] public string Username { get; set; } = string.Empty;
+    [JsonPropertyName("password")]
+    public string Password { get; set; } = string.Empty;
     [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
     [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
 }
@@ -76,7 +78,9 @@ public class ChatMessageData
 public class UserStatusNotifyData
 {
     [JsonPropertyName("user_id")] public string UserId { get; set; } = string.Empty;
+
     [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
+
     [JsonPropertyName("status")] public string Status { get; set; } = "ONLINE"; // "ONLINE" hoặc "OFFLINE"
     [JsonPropertyName("last_seen")] public long LastSeen { get; set; }
 }
