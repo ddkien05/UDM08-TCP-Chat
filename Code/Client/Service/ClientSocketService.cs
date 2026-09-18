@@ -91,7 +91,7 @@ namespace ChatTCP.Client.Networking
                 await _client.ConnectAsync(host, port);
                 _stream = _client.GetStream();
 
-                    // Gửi yêu cầu đăng nhập
+                // Gửi yêu cầu đăng nhập
                 var loginPacket = new Packet<object>
                 {
                     Type = "LOGIN_REQ",
