@@ -65,9 +65,9 @@ namespace ChatTCP.Client.Views
         }
 
         /// <summary>
-        /// Send a plain-text REGISTER command to AuthHandler (port 8888).
-        /// Format: REGISTER;username;password;displayName
-        /// Returns server response line.
+        /// Gửi lệnh REGISTER dạng plain-text tới AuthHandler (cổng 8888).
+        /// Định dạng: REGISTER;username;password;displayName
+        /// Trả về dòng phản hồi từ server.
         /// </summary>
         private Task<string> SendRegisterCommandAsync(string username, string password, string displayName)
         {

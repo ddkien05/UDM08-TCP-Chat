@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿//using System.Collections.Concurrent;
 //using System.Net;
 //using System.Net.Sockets;
@@ -6,6 +7,17 @@
 //using ChatTCP.Common.Models;
 //using ChatTCP.Common.Protocol;
 //using ChatTCP.Server.Services;
+=======
+﻿using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
+using ChatTCP.Common.Models;
+using ChatTCP.Common.Protocol;
+using ChatTCP.Server.Services;
+using ChatTCP.Server.Data;
+>>>>>>> 4dcb71763c935529c19ee7b2e4889d4a0bcc8679
 
 //namespace ChatTCP.Server.Networking;
 
@@ -18,9 +30,16 @@
 //        Console.OutputEncoding = Encoding.UTF8;
 //        int port = 8888;
 
+<<<<<<< HEAD
 //        var router = new MessageRouter(_clients);
 //        var listener = new TcpListener(IPAddress.Any, port);
 //        listener.Start();
+=======
+        IMessageRepository messageRepository = new MessageRepository();
+        var router = new MessageRouter(_clients, messageRepository);
+        var listener = new TcpListener(IPAddress.Any, port);
+        listener.Start();
+>>>>>>> 4dcb71763c935529c19ee7b2e4889d4a0bcc8679
 
 //        Console.Title = "TCP SERVER";
 //        Console.WriteLine($"[SERVER] Server is running on port {port}...");
