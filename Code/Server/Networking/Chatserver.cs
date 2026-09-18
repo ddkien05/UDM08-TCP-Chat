@@ -6,27 +6,33 @@ using ChatTCP.Server.Services;
 
 namespace ChatTCP.Server.Networking
 {
+
+    /// Server TCP chính: Bind + Listen + Accept liên tục client mới, giao mỗi client
+    /// cho AuthHandler xử lý Login/Register trước khi coi là online.
+    ///
+    /// Không tự đóng khung message nữa (ReadFrame/WriteFrame cũ đã bỏ) — việc đó giờ
+    /// giao hết cho ChatTCP.Common.Protocol.MessageProtocol của Thanh Thuý, để chỉ có
+    /// đúng 1 nơi xử lý framing, tránh 2 kiểu đóng gói khác nhau tồn tại song song.
     public class ChatServer
     {
-        private const int PORT = 8888;
+        private const int ServerPort = 8888;
 
-        private TcpListener listener;
-        private AuthHandler authHandler;
-        private bool isRunning;
+        private TcpListener _listener;
+        private readonly AuthHandler _authHandler;
+        private bool _isRunning;
 
         public ChatServer(AuthHandler authHandler)
         {
-            this.authHandler = authHandler;
+            _authHandler = authHandler;
         }
 
-        // Mở cổng 8888 và bắt đầu nhận client mới
         public void Start()
         {
-            listener = new TcpListener(IPAddress.Any, PORT);
-            listener.Start();
-            isRunning = true;
+            _listener = new TcpListener(IPAddress.Any, ServerPort);
+            _listener.Start();
+            _isRunning = true;
 
-            Console.WriteLine("Server đã chạy, đang lắng nghe tại cổng " + PORT + "...");
+            Console.WriteLine($"[ChatServer] Server đã chạy, đang lắng nghe tại cổng {ServerPort}...");
 
             Thread acceptThread = new Thread(AcceptLoop);
             acceptThread.IsBackground = true;
@@ -35,78 +41,47 @@ namespace ChatTCP.Server.Networking
 
         public void Stop()
         {
-            isRunning = false;
-            listener.Stop();
-            Console.WriteLine("Server đã dừng.");
+            _isRunning = false;
+            _listener?.Stop();
+            Console.WriteLine("[ChatServer] Server đã dừng.");
         }
 
-        // Vòng lặp: có client mới kết nối tới là nhận ngay
         private void AcceptLoop()
         {
-            while (isRunning)
+            while (_isRunning)
             {
                 try
                 {
-                    TcpClient newClient = listener.AcceptTcpClient();
-                    Console.WriteLine("Có client mới kết nối: " + newClient.Client.RemoteEndPoint);
+                    TcpClient newClient = _listener.AcceptTcpClient();
 
-                    // Xử lý login/register trên Thread riêng để không làm chậm client tiếp theo
-                    Thread thread = new Thread(() =>
+                    string ip = newClient.Client.RemoteEndPoint.ToString();
+                    Console.WriteLine("[ChatServer] Có client mới kết nối: " + ip + " — đang chờ Login/Register...");
+
+                    Thread authThread = new Thread(() =>
                     {
                         try
                         {
-                            authHandler.Handle(newClient);
+                            // AuthHandler dùng JSON + async .
+                            // Thread ở đây vẫn chạy đồng bộ, nên chờ luôn bằng GetAwaiter().GetResult().
+                            _authHandler.HandleAsync(newClient).GetAwaiter().GetResult();
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Lỗi khi xử lý client: " + ex.Message);
+                            Console.WriteLine("[ChatServer] Lỗi không mong muốn khi xử lý client: " + ex.Message);
                         }
                     });
-                    thread.IsBackground = true;
-                    thread.Start();
+                    authThread.IsBackground = true;
+                    authThread.Start();
                 }
                 catch (SocketException)
                 {
-                    break; // xảy ra khi Stop() được gọi
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("[ChatServer] Lỗi không mong muốn trong AcceptLoop: " + ex.Message);
                 }
             }
-        }
-
-        // Gửi 1 tin nhắn: ghi 4 byte độ dài trước, nội dung sau
-        public static void WriteFrame(NetworkStream stream, byte[] data)
-        {
-            byte[] lengthBytes = BitConverter.GetBytes(data.Length);
-            stream.Write(lengthBytes, 0, 4);
-            stream.Write(data, 0, data.Length);
-        }
-
-        // Đọc 1 tin nhắn: đọc đủ 4 byte độ dài, rồi đọc đủ nội dung
-        public static byte[] ReadFrame(NetworkStream stream)
-        {
-            byte[] lengthBytes = ReadExact(stream, 4);
-            if (lengthBytes == null)
-                return null;
-
-            int length = BitConverter.ToInt32(lengthBytes, 0);
-            return ReadExact(stream, length);
-        }
-
-        // Đọc cho đủ đúng số byte cần, vì TCP có thể gửi rời rạc nhiều lần
-        private static byte[] ReadExact(NetworkStream stream, int count)
-        {
-            byte[] buffer = new byte[count];
-            int total = 0;
-
-            while (total < count)
-            {
-                int read = stream.Read(buffer, total, count - total);
-                if (read == 0)
-                    return null; // client đã đóng kết nối
-
-                total += read;
-            }
-
-            return buffer;
         }
     }
 }

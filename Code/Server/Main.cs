@@ -16,23 +16,39 @@ namespace ChatTCP.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Lỗi khởi tạo Database: " + ex.Message);
+                Console.WriteLine($"Lỗi khởi tạo Database: {ex.Message}");
                 return;
             }
 
-            UserRepository userRepository = new UserRepository();
-            ClientManager clientManager = new ClientManager(userRepository);
-            AuthHandler authHandler = new AuthHandler(userRepository, clientManager);
-            ChatServer server = new ChatServer(authHandler);
-          
+            IUserRepository userRepository = new UserRepository();
+
+            ClientManager clientManager =
+                new ClientManager(userRepository);
+
+            AuthHandler authHandler =
+                new AuthHandler(userRepository, clientManager);
+
+            ChatServer server =
+                new ChatServer(authHandler);
+
+            HeartbeatMonitor heartbeatMonitor =
+                new HeartbeatMonitor(clientManager);
+
+            IMessageRepository messageRepository =
+                new MessageRepository();
+
+            MessageRouter messageRouter =
+                new MessageRouter(
+                    clientManager.ClientMap,
+                    messageRepository);
 
             server.Start();
-      
+            heartbeatMonitor.Start();
 
             Console.WriteLine("Nhấn Enter để dừng server...");
             Console.ReadLine();
 
-    
+            heartbeatMonitor.Stop();
             server.Stop();
         }
     }
