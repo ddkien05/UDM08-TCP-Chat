@@ -1,16 +1,20 @@
 using System;
-using System.IO;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
-using ChatTCP.Common.Models;
 
 namespace ChatTCP.Server.Services
 {
+   
+    /// Xử lý Login/Register bằng đúng giao thức JSON 
+    /// Packet&lt;AuthRequestData&gt;/Packet&lt;AuthResponseData&gt;)
+    ///
+
+    
     public class AuthHandler
     {
         private readonly IUserRepository _userRepository;
@@ -24,43 +28,35 @@ namespace ChatTCP.Server.Services
 
         public async Task HandleAsync(TcpClient client)
         {
+            NetworkStream stream = client.GetStream();
+
             try
             {
-                NetworkStream stream = client.GetStream();
-
-                string rawJson = await MessageProtocol.ReceiveRawJsonAsync(stream);
-                if (string.IsNullOrEmpty(rawJson))
+                string json = await MessageProtocol.ReceiveRawJsonAsync(stream);
+                if (json == null)
                 {
                     client.Close();
                     return;
                 }
 
-                var packet = JsonSerializer.Deserialize<Packet<JsonElement>>(rawJson);
-                if (packet == null)
-                {
-                    await SendAuthResAsync(stream, 400, "Invalid packet");
-                    client.Close();
-                    return;
-                }
+                // Đọc trước field "type" để biết đây là gói LOGIN hay REGISTER
+                using JsonDocument doc = JsonDocument.Parse(json);
+                string type = doc.RootElement.GetProperty("type").GetString();
 
-                if (packet.Type == "REGISTER_REQ")
+                Packet<AuthRequestData> requestPacket = JsonSerializer.Deserialize<Packet<AuthRequestData>>(json);
+                AuthRequestData request = requestPacket.Data;
+
+                if (type == "REGISTER")
                 {
-                    string username = packet.Data.GetProperty("username").GetString() ?? "";
-                    string password = packet.Data.GetProperty("password").GetString() ?? "";
-                    string displayName = packet.Data.TryGetProperty("display_name", out var dn) ? dn.GetString() : username;
-                    
-                    await HandleRegisterAsync(client, stream, username, password, displayName);
+                    await HandleRegisterAsync(client, stream, requestPacket.Seq, request);
                 }
-                else if (packet.Type == "LOGIN_REQ" || packet.Type == "AUTH_REQ")
+                else if (type == "LOGIN")
                 {
-                    string username = packet.Data.GetProperty("username").GetString() ?? "";
-                    string password = packet.Data.GetProperty("password").GetString() ?? "";
-                    
-                    await HandleLoginAsync(client, stream, username, password);
+                    await HandleLoginAsync(client, stream, requestPacket.Seq, request);
                 }
                 else
                 {
-                    await SendAuthResAsync(stream, 400, "Lệnh không hợp lệ");
+                    await SendAuthResponseAsync(stream, requestPacket.Seq, 400, "Loại gói tin không hợp lệ", null);
                     client.Close();
                 }
             }
@@ -71,58 +67,65 @@ namespace ChatTCP.Server.Services
             }
         }
 
-        private async Task HandleRegisterAsync(TcpClient client, NetworkStream stream, string username, string password, string displayName)
+        private async Task HandleRegisterAsync(TcpClient client, NetworkStream stream, int seq, AuthRequestData request)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                if (_userRepository.GetByUsername(request.Username) != null)
                 {
-                    await SendAuthResAsync(stream, 400, "Username và password không được để trống");
+                    await SendAuthResponseAsync(stream, seq, 409, "Username đã tồn tại", null);
                     client.Close();
                     return;
                 }
 
-                if (_userRepository.GetByUsername(username) != null)
+                // Lưu ý: đang lưu password thô, chưa băm (hash).
+                int userId = _userRepository.CreateUser(request.Username, request.Password, request.DisplayName);
+
+                if (!string.IsNullOrEmpty(request.AvatarUrl))
                 {
-                    await SendAuthResAsync(stream, 400, "Username đã tồn tại");
-                    client.Close();
-                    return;
+                    _userRepository.UpdateAvatar(userId, request.AvatarUrl);
                 }
 
-                int userId = _userRepository.CreateUser(username, password, displayName);
-                
-                await SendAuthResAsync(stream, 200, "Success", userId);
+                UserModel newUser = new UserModel
+                {
+                    UserId = userId,
+                    Username = request.Username,
+                    DisplayName = request.DisplayName,
+                    AvatarUrl = request.AvatarUrl
+                };
+
+                await SendAuthResponseAsync(stream, seq, 200, "Đăng ký thành công", newUser);
 
                 _clientManager.Add(new ClientSession
                 {
                     TcpClient = client,
                     UserId = userId,
-                    Username = username,
-                    DisplayName = displayName
+                    Username = request.Username,
+                    DisplayName = request.DisplayName
                 });
             }
             catch (Exception ex)
             {
                 Console.WriteLine("[AuthHandler] Lỗi khi Register: " + ex.Message);
-                await SendAuthResAsync(stream, 500, "Lỗi hệ thống, thử lại sau");
+                await SendAuthResponseAsync(stream, seq, 500, "Lỗi hệ thống, thử lại sau", null);
                 client.Close();
             }
         }
 
-        private async Task HandleLoginAsync(TcpClient client, NetworkStream stream, string username, string password)
+        private async Task HandleLoginAsync(TcpClient client, NetworkStream stream, int seq, AuthRequestData request)
         {
             try
             {
-                UserModel user = _userRepository.GetByUsername(username);
+                UserModel user = _userRepository.GetByUsername(request.Username);
 
-                if (user == null || user.PasswordHash != password)
+                if (user == null || user.PasswordHash != request.Password)
                 {
-                    await SendAuthResAsync(stream, 401, "Sai tài khoản hoặc mật khẩu");
+                    await SendAuthResponseAsync(stream, seq, 401, "Sai tài khoản hoặc mật khẩu", null);
                     client.Close();
                     return;
                 }
 
-                await SendAuthResAsync(stream, 200, "Success", user.UserId);
+                await SendAuthResponseAsync(stream, seq, 200, "Đăng nhập thành công", user);
 
                 _clientManager.Add(new ClientSession
                 {
@@ -135,25 +138,31 @@ namespace ChatTCP.Server.Services
             catch (Exception ex)
             {
                 Console.WriteLine("[AuthHandler] Lỗi khi Login: " + ex.Message);
-                await SendAuthResAsync(stream, 500, "Lỗi hệ thống, thử lại sau");
+                await SendAuthResponseAsync(stream, seq, 500, "Lỗi hệ thống, thử lại sau", null);
                 client.Close();
             }
         }
 
-        private async Task SendAuthResAsync(NetworkStream stream, int code, string message, int? userId = null)
+        /// Đóng gói kết quả thành Packet&lt;AuthResponseData&gt; rồi gửi qua MessageProtocol.
+        private async Task SendAuthResponseAsync(NetworkStream stream, int seq, int code, string message, UserModel user)
         {
-            var res = new Packet<object>
+            AuthResponseData responseData = new AuthResponseData
             {
-                Type = "AUTH_RES",
-                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Data = new
-                {
-                    code = code,
-                    message = message,
-                    user_id = userId
-                }
+                Code = code,
+                Message = message,
+                UserId = user != null ? user.UserId.ToString() : "",
+                DisplayName = user != null ? user.DisplayName : "",
+                AvatarUrl = user?.AvatarUrl
             };
-            await MessageProtocol.SendPacketAsync(stream, res);
+
+            Packet<AuthResponseData> responsePacket = new Packet<AuthResponseData>
+            {
+                Type = "AUTH_RESPONSE",
+                Seq = seq,
+                Data = responseData
+            };
+
+            await MessageProtocol.SendPacketAsync(stream, responsePacket);
         }
     }
 }
