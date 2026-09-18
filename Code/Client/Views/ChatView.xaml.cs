@@ -45,7 +45,7 @@ namespace ChatTCP.Client.Views
             {
                 if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
                 {
-                    // Nếu là tin nhắn mới thêm vào cuối, ta scroll to bottom
+                    // Nếu là tin nhắn mới thêm vào cuối, ta cuộn xuống dưới
                     if (e.NewStartingIndex == ViewModel.Messages.Count - 1)
                     {
                         ScrollToBottom();
@@ -83,7 +83,7 @@ namespace ChatTCP.Client.Views
         // Các hàm xử lý giao diện từ SocketService cũ (OnChatMessageReceived) đã được xóa bỏ vì ViewModel tự handle.
 
         /// <summary>
-        /// Scrolls the message scroll viewer to the bottom to show the latest message
+        /// Cuộn xuống dưới cùng để hiển thị tin nhắn mới nhất
         /// </summary>
         private void ScrollToBottom()
         {

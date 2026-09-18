@@ -12,20 +12,20 @@ using ChatTCP.Client.Networking;
 namespace ChatTCP.Client.ViewModels
 {
     /// <summary>
-    /// ChatViewModel handles the business logic for chat messages including:
-    /// - Managing message history with in-memory cache (max 500 messages)
-    /// - Sending regular messages, replies, forwards, and broadcasts
-    /// - Loading message history when user scrolls up
-    /// - Message state management (reply/forward context)
+    /// ChatViewModel xử lý logic nghiệp vụ cho tin nhắn chat bao gồm:
+    /// - Quản lý lịch sử tin nhắn với bộ nhớ đệm trong RAM (tối đa 500 tin nhắn)
+    /// - Gửi tin nhắn thường, trả lời, chuyển tiếp và phát broadcast
+    /// - Tải lịch sử tin nhắn khi người dùng cuộn lên
+    /// - Quản lý trạng thái tin nhắn (bối cảnh trả lời/chuyển tiếp)
     /// 
-    /// This ViewModel separates concerns from the View, allowing for easier testing
-    /// and potential reuse. It communicates with ClientSocketService for network operations.
+    /// ViewModel này tách biệt giao diện khỏi logic, giúp dễ testing
+    /// và tái sử dụng. Nó giao tiếp với ClientSocketService để thực hiện các thao tác mạng.
     /// 
-    /// Usage:
+    /// Cách sử dụng:
     ///   var vm = new ChatViewModel(socketService);
     ///   vm.Messages.Add(new ChatMessageData { ... });
-    ///   await vm.SendMessageAsync("Hello");
-    ///   await vm.SendReplyAsync(messageId, "Reply text");
+    ///   await vm.SendMessageAsync("Xin chào");
+    ///   await vm.SendReplyAsync(messageId, "Nội dung trả lời");
     /// </summary>
     public class ChatViewModel
     {
@@ -36,24 +36,24 @@ namespace ChatTCP.Client.ViewModels
         private bool _isLoadingHistory = false;
 
         /// <summary>
-        /// Observable collection of messages displayed in the chat view.
-        /// Updated when receiving messages, sending messages, or loading history.
+        /// Bộ sưu tập có thể quan sát các tin nhắn hiển thị trong giao diện chat.
+        /// Cập nhật khi nhận tin nhắn, gửi tin nhắn hoặc tải lịch sử.
         /// </summary>
         public ObservableCollection<ChatMessageData> Messages { get; } = new();
 
         /// <summary>
-        /// Queue of message history (older messages) waiting to be loaded.
-        /// In a real app, this would fetch from database.
+        /// Hàng đợi lịch sử tin nhắn (các tin nhắn cũ hơn) đang chờ tải.
+        /// Trong ứng dụng thực tế, đây sẽ là dữ liệu lấy từ cơ sở dữ liệu.
         /// </summary>
         private readonly Queue<ChatMessageData> _historyQueue = new();
 
         /// <summary>
-        /// Current user information (set after authentication)
+        /// Thông tin người dùng hiện tại (đặt sau khi xác thực)
         /// </summary>
         public SenderInfo? CurrentUser { get; set; }
 
         /// <summary>
-        /// Indicates if history is currently being loaded (prevents multiple concurrent loads)
+        /// Cho biết lịch sử đang được tải hay không (ngăn việc tải đồng thời nhiều lần)
         /// </summary>
         public bool IsLoadingHistory
         {
@@ -66,7 +66,7 @@ namespace ChatTCP.Client.ViewModels
             _socketService = socketService;
             _dispatcher = dispatcher;
 
-            // Subscribe to socket service events
+            // Đăng ký sự kiện từ socket service
             if (_socketService != null)
             {
                 _socketService.OnChatMessageReceived += HandleChatMessageReceived;
@@ -271,12 +271,12 @@ namespace ChatTCP.Client.ViewModels
 
                 if (batch.Count == 0)
                 {
-                    return false; // No more history
+                    return false; // Hết lịch sử
                 }
 
                 InvokeOnUI(() =>
                 {
-                    // Prepend to front of collection (older messages first)
+                    // Thêm vào đầu bộ sưu tập (tin nhắn cũ hơn trước)
                     for (int i = batch.Count - 1; i >= 0; i--)
                     {
                         Messages.Insert(0, batch[i]);
@@ -287,7 +287,7 @@ namespace ChatTCP.Client.ViewModels
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Load history error: {ex.Message}");
+                Console.WriteLine($"Lỗi tải lịch sử: {ex.Message}");
                 return false;
             }
             finally
@@ -297,8 +297,8 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Populates the history queue with fake older messages for testing.
-        /// In production, this would fetch from a database via HTTP or query server.
+        /// Điền hàng đợi lịch sử bằng các tin nhắn mẫu cũ để testing.
+        /// Trong môi trường production, đây sẽ là dữ liệu lấy từ cơ sở dữ liệu qua HTTP hoặc query server.
         /// </summary>
         public void LoadFakeHistory(int count = 50)
         {
@@ -310,17 +310,17 @@ namespace ChatTCP.Client.ViewModels
                 _historyQueue.Enqueue(new ChatMessageData
                 {
                     MsgId = Guid.NewGuid().ToString("N"),
-                    Content = $"History message #{i}: This is an old message from {i} messages ago",
+                    Content = $"Lịch sử tin nhắn #{i}: Đây là tin nhắn cũ cách đây {i} tin nhắn",
                     TargetType = "PRIVATE",
                     TargetId = "unknown",
-                    Sender = new SenderInfo { UserId = $"user_{i}", DisplayName = $"User {i}" }
+                    Sender = new SenderInfo { UserId = $"user_{i}", DisplayName = $"Người dùng {i}" }
                 });
             }
         }
 
         /// <summary>
-        /// Handles incoming chat messages from the socket service.
-        /// Adds received messages to the Messages collection on the UI thread.
+        /// Xử lý tin nhắn chat tiếp nhận từ socket service.
+        /// Thêm các tin nhắn nhận được vào bộ sưu tập Messages trên luồng UI.
         /// </summary>
         private void HandleChatMessageReceived(Packet<ChatMessageData> packet)
         {
@@ -333,9 +333,9 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Invokes an action on the UI thread if a Dispatcher is available.
-        /// Otherwise executes on the thread pool.
-        /// This ensures thread-safe updates to the ObservableCollection.
+        /// Gọi một hành động trên luồng UI nếu Dispatcher có sẵn.
+        /// Ngược lại thực thi trên thread pool.
+        /// Đảm bảo cập nhật an toàn cho ObservableCollection trên luồng UI.
         /// </summary>
         private void InvokeOnUI(Action action)
         {
@@ -357,7 +357,7 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Cleans up resources. Call when the ViewModel is no longer needed.
+        /// Dọn dẹp tài nguyên. Gọi khi ViewModel không còn cần thiết.
         /// </summary>
         public void Dispose()
         {
