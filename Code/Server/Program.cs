@@ -1,7 +1,8 @@
-﻿using ChatTCP.Server.Data;
+﻿using System;
+using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
 using ChatTCP.Server.Services;
-using System;
+
 namespace ChatTCP.Server
 {
     class Program
@@ -15,20 +16,23 @@ namespace ChatTCP.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi khởi tạo Database: {ex.Message}");
-                return; // Nếu lỗi DB thì dừng luôn, không chạy Server nữa
+                Console.WriteLine("Lỗi khởi tạo Database: " + ex.Message);
+                return;
             }
 
-            IUserRepository userRepository = new UserRepository();
+            UserRepository userRepository = new UserRepository();
             ClientManager clientManager = new ClientManager(userRepository);
             AuthHandler authHandler = new AuthHandler(userRepository, clientManager);
             ChatServer server = new ChatServer(authHandler);
+          
 
             server.Start();
+      
 
             Console.WriteLine("Nhấn Enter để dừng server...");
             Console.ReadLine();
 
+    
             server.Stop();
         }
     }

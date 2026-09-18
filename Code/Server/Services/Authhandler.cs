@@ -3,7 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
