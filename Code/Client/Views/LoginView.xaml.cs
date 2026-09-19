@@ -55,25 +55,11 @@ namespace ChatTCP.Client.Views
 
             try
             {
-                bool connected =
-                    await _socketService.ConnectAsync(
-                        "127.0.0.1",
-                        8888);
-
-                if (connected)
-                {
-                    MessageBox.Show(
-                        "Kết nối Server thành công.");
-
-                    LoginSucceeded?.Invoke();
-                }
-
                 bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
 
                 if (!loginSuccess)
                 {
-                    // Lỗi đã được hiển thị qua sự kiện OnError của ClientSocketService,
-                    // Nhưng ta có thể để LoginSucceeded không được gọi.
+                    // Lỗi đã được phát qua sự kiện OnError của ClientSocketService
                     return;
                 }
 

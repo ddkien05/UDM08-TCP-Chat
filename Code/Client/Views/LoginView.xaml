@@ -26,9 +26,15 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="80"/>
                     </Grid.ColumnDefinitions>
-                   
+                    
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Địa chỉ Server" Margin="0,0,0,6"/>
+                        <TextBox x:Name="ServerIpTextBox" Text="127.0.0.1" Height="40" Padding="10"/>
+                    </StackPanel>
+
 
                     <StackPanel Grid.Column="1">
+                        
                         <TextBlock Text="Cổng" Margin="0,0,0,6"/>
                         <TextBox x:Name="PortTextBox" Text="9000" Height="40" Padding="10"/>
                     </StackPanel>
