@@ -27,7 +27,8 @@
                         VerticalAlignment="Center"
                         Margin="16,0">
 
-                <TextBlock Text="An Nguyễn"
+                <TextBlock x:Name="ChatTargetNameText"
+                           Text="An Nguyễn"
                            Style="{StaticResource HeaderMedium}"/>
 
                 <Ellipse Width="8"

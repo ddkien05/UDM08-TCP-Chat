@@ -25,15 +25,6 @@ namespace ChatTCP.Server
             ClientManager clientManager =
                 new ClientManager(userRepository);
 
-            AuthHandler authHandler =
-                new AuthHandler(userRepository, clientManager);
-
-            ChatServer server =
-                new ChatServer(authHandler);
-
-            HeartbeatMonitor heartbeatMonitor =
-                new HeartbeatMonitor(clientManager);
-
             IMessageRepository messageRepository =
                 new MessageRepository();
 
@@ -41,6 +32,15 @@ namespace ChatTCP.Server
                 new MessageRouter(
                     clientManager.ClientMap,
                     messageRepository);
+
+            AuthHandler authHandler =
+                new AuthHandler(userRepository, clientManager, messageRouter);
+
+            ChatServer server =
+                new ChatServer(authHandler);
+
+            HeartbeatMonitor heartbeatMonitor =
+                new HeartbeatMonitor(clientManager);
 
             server.Start();
             heartbeatMonitor.Start();

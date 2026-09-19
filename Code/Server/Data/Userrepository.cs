@@ -111,6 +111,30 @@ namespace ChatTCP.Server.Data
             }
         }
 
+        ///Lấy toàn bộ user trong hệ thống, dùng để hiển thị danh sách liên hệ thật cho client.
+        public System.Collections.Generic.List<UserModel> GetAllUsers()
+        {
+            var result = new System.Collections.Generic.List<UserModel>();
+            try
+            {
+                using var conn = DbConnectionFactory.Create();
+                using var cmd = new SqliteCommand(
+                    @"SELECT UserId, Username, PasswordHash, DisplayName, AvatarUrl
+                      FROM Users ORDER BY DisplayName", conn);
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    result.Add(MapReaderToUser(reader));
+                }
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine("[UserRepository] Lỗi GetAllUsers: " + ex.Message);
+            }
+            return result;
+        }
+
         ///Gom logic đọc 1 dòng SqliteDataReader thành UserModel, tránh lặp code giữa GetByUsername/GetById.
         private static UserModel MapReaderToUser(SqliteDataReader reader) => new UserModel
         {

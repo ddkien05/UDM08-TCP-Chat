@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ChatTCP.Common.Models;
 
@@ -83,6 +84,26 @@ public class UserStatusNotifyData
 
     [JsonPropertyName("status")] public string Status { get; set; } = "ONLINE"; // "ONLINE" hoặc "OFFLINE"
     [JsonPropertyName("last_seen")] public long LastSeen { get; set; }
+}
+
+/// <summary>
+/// Thông tin tóm tắt 1 user, dùng để trả về danh sách liên hệ (contact list) thật.
+/// </summary>
+public class UserSummaryData
+{
+    [JsonPropertyName("user_id")] public string UserId { get; set; } = string.Empty;
+    [JsonPropertyName("username")] public string Username { get; set; } = string.Empty;
+    [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
+    [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
+    [JsonPropertyName("is_online")] public bool IsOnline { get; set; }
+}
+
+/// <summary>
+/// Dữ liệu trả về cho gói tin USER_LIST: toàn bộ user trong hệ thống (trừ chính mình).
+/// </summary>
+public class UserListData
+{
+    [JsonPropertyName("users")] public List<UserSummaryData> Users { get; set; } = new();
 }
 
 /// <summary>

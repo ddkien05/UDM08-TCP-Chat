@@ -13,6 +13,7 @@ namespace ChatTCP.Client.Views
     public partial class ChatView : UserControl
     {
         private readonly ClientSocketService? _socketService;
+        private readonly string _targetId;
         public ViewModels.ChatViewModel ViewModel { get; }
         
         private string? _replyMsgId;
@@ -30,15 +31,36 @@ namespace ChatTCP.Client.Views
             "👍","👎","👏","🙏","❤️","🔥","🎉","😢","😮","😴"
         };
 
-        public ChatView()
+        /// <summary>
+        /// Constructor cũ - CHỈ dùng cho design-time preview trong Visual Studio.
+        /// KHÔNG dùng khi chạy thật vì socket này chưa hề đăng nhập (IsConnected = false),
+        /// nên mọi tin nhắn gửi đi sẽ không tới được server.
+        /// </summary>
+        public ChatView() : this(new ClientSocketService(), "user_test", "Contact (demo)")
+        {
+        }
+
+        /// <summary>
+        /// Constructor thật: dùng lại đúng ClientSocketService đã LoginAsync thành công
+        /// (đang chạy vòng lặp nhận tin) và targetId thật của người/nhóm sẽ chat cùng.
+        /// </summary>
+        public ChatView(ClientSocketService socketService, string targetId, string targetDisplayName)
         {
             InitializeComponent();
-            _socketService = new ClientSocketService(Dispatcher);
-            ViewModel = new ViewModels.ChatViewModel(_socketService, Dispatcher);
+            _socketService = socketService;
+            _targetId = targetId;
+
+            ViewModel = new ViewModels.ChatViewModel(_socketService, Dispatcher)
+            {
+                CurrentUser = new ChatTCP.Common.Models.SenderInfo
+                {
+                    UserId = _socketService.LoggedInUserId,
+                    DisplayName = _socketService.LoggedInDisplayName
+                }
+            };
             this.DataContext = ViewModel;
 
-            // Load một ít fake history ban đầu để test tính năng cuộn
-            ViewModel.LoadFakeHistory(30);
+            ChatTargetNameText.Text = targetDisplayName;
 
             // Gắn event để auto scroll xuống dưới khi có tin nhắn mới (chỉ scroll nếu đang ở đáy)
             ViewModel.Messages.CollectionChanged += (s, e) =>
@@ -105,7 +127,7 @@ namespace ChatTCP.Client.Views
             string content = MessageInputBox.Text;
             if (string.IsNullOrWhiteSpace(content)) return;
 
-            string targetId = "user_test"; // Lấy từ contact list thực tế
+            string targetId = _targetId; // Lấy từ contact list thực tế, truyền vào qua constructor
 
             if (_replyMsgId != null)
             {

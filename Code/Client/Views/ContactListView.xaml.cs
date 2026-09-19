@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
+using ChatTCP.Client.Networking;
 
 namespace ChatTCP.Client.Views
 {
@@ -19,9 +20,21 @@ namespace ChatTCP.Client.Views
         private readonly ICollectionView _chatView;
         private readonly string _avatarFolder;
         private readonly string _avatarFile;
+        private readonly ClientSocketService? _socketService;
 
-        public ContactListView()
+        /// <summary>
+        /// Bắn khi người dùng chọn 1 liên hệ để mở màn hình chat.
+        /// (targetUserId, targetDisplayName)
+        /// </summary>
+        public event Action<string, string>? ChatSelected;
+
+        public ContactListView() : this(null)
         {
+        }
+
+        public ContactListView(ClientSocketService? socketService)
+        {
+            _socketService = socketService;
             InitializeComponent();
 
             // =========================
@@ -50,10 +63,22 @@ namespace ChatTCP.Client.Views
             ChatList.ItemsSource = _chatView;
 
             // =========================
-            // DỮ LIỆU MẪU
+            // DANH SÁCH LIÊN HỆ
             // =========================
 
-            LoadSampleData();
+            if (_socketService != null)
+            {
+                // Đã đăng nhập thật -> lấy danh sách user thật từ server
+                _socketService.OnUserListReceived += HandleUserListReceived;
+                _ = _socketService.RequestUserListAsync();
+
+                this.Unloaded += (_, _) => _socketService.OnUserListReceived -= HandleUserListReceived;
+            }
+            else
+            {
+                // Không có kết nối (vd: xem trước trong Designer) -> dùng dữ liệu mẫu
+                LoadSampleData();
+            }
 
             // =========================
             // LOAD AVATAR
@@ -62,6 +87,27 @@ namespace ChatTCP.Client.Views
             LoadSavedAvatar();
 
             UpdateEmptyState();
+        }
+
+        // =====================================================
+        // NHẬN DANH SÁCH LIÊN HỆ THẬT TỪ SERVER
+        // =====================================================
+
+        private void HandleUserListReceived(ChatTCP.Common.Models.Packet<ChatTCP.Common.Models.UserListData> packet)
+        {
+            ClearChats();
+
+            foreach (var user in packet.Data.Users)
+            {
+                AddChat(new ChatItem
+                {
+                    Name = user.DisplayName,
+                    Username = user.Username,
+                    UserId = user.UserId,
+                    LastMessage = user.IsOnline ? "Đang hoạt động" : "Ngoại tuyến",
+                    Time = string.Empty
+                });
+            }
         }
 
         // =====================================================
@@ -186,6 +232,29 @@ namespace ChatTCP.Client.Views
                     StringComparison.CurrentCultureIgnoreCase);
 
             return matchName || matchUsername;
+        }
+
+        // =====================================================
+        // CHỌN 1 LIÊN HỆ ĐỂ MỞ CHAT
+        // =====================================================
+
+        private void ChatList_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (ChatList.SelectedItem is ChatItem chat)
+            {
+                // Ưu tiên UserId thật (nếu có) để khớp với _clientMap phía server,
+                // nếu không có (dữ liệu mẫu) thì tạm dùng Username.
+                string targetId = string.IsNullOrWhiteSpace(chat.UserId)
+                    ? chat.Username
+                    : chat.UserId;
+
+                ChatSelected?.Invoke(targetId, chat.Name);
+
+                // Bỏ chọn để có thể bấm lại cùng 1 contact và mở lại ChatView
+                ChatList.SelectedItem = null;
+            }
         }
 
         private void SearchTextBox_TextChanged(
@@ -379,6 +448,10 @@ namespace ChatTCP.Client.Views
             = string.Empty;
 
         public string Username { get; set; }
+            = string.Empty;
+
+        /// <summary>UserId thật của tài khoản (dùng để route CHAT_MSG). Để trống nếu chỉ là dữ liệu mẫu.</summary>
+        public string UserId { get; set; }
             = string.Empty;
 
         public string LastMessage { get; set; }

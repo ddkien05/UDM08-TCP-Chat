@@ -9,7 +9,7 @@ namespace ChatTCP.Client.Views
     {
         private readonly ClientSocketService _socketService;
 
-        public event Action? LoginSucceeded;
+        public event Action<ClientSocketService>? LoginSucceeded;
         public event Action? RegisterRequested;
 
         public LoginView()
@@ -77,7 +77,7 @@ namespace ChatTCP.Client.Views
                     return;
                 }
 
-                LoginSucceeded?.Invoke();
+                LoginSucceeded?.Invoke(_socketService);
             }
             catch (Exception ex)
             {
