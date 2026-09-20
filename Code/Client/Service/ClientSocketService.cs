@@ -153,6 +153,7 @@ namespace ChatTCP.Client.Networking
                 // Nếu thành công, bắt đầu vòng lặp nhận tin nhắn
                 _cts = new CancellationTokenSource();
                 _ = Task.Run(() => ReceiveLoopAsync(_cts.Token));
+                ConversationStore.Instance.Clear();
 
                 return true;
             }
@@ -268,7 +269,7 @@ namespace ChatTCP.Client.Networking
 
             // Ghi nhận ngay vào ConversationStore để danh sách chat cập nhật preview + giờ
             // real-time, bất kể ContactListView có đang hiển thị hay không lúc này.
-            ConversationStore.Instance.RecordOutgoing(data.TargetId, data.Content, DateTime.Now);
+            ConversationStore.Instance.RecordOutgoing(data.TargetId, data.Content, DateTime.Now, data);
         }
 
         /// <summary>
@@ -388,10 +389,14 @@ namespace ChatTCP.Client.Networking
                         ? DateTimeOffset.FromUnixTimeSeconds(chatPacket.Timestamp).LocalDateTime
                         : DateTime.Now;
 
+                    chatPacket.Data.IsMine = false;
+                    chatPacket.Data.LocalTime = receivedAt;
+
                     ConversationStore.Instance.RecordIncoming(
                         chatPacket.Data.Sender?.UserId ?? string.Empty,
                         chatPacket.Data.Content,
-                        receivedAt);
+                        receivedAt,
+                        chatPacket.Data);
 
                     InvokeOnUI(() => OnChatMessageReceived?.Invoke(chatPacket));
                 }

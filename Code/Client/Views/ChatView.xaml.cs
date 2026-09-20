@@ -23,6 +23,7 @@ namespace ChatTCP.Client.Views
         private string? _forwardFromName;
         private string? _forwardMsgId;
         private readonly List<string> _recentEmojis = new();
+        private bool _skipNextEmojiToggle;
 
         private static readonly string[] EMOJIS = new[]
         {
@@ -61,16 +62,18 @@ namespace ChatTCP.Client.Views
                 {
                     UserId = _socketService.LoggedInUserId,
                     DisplayName = _socketService.LoggedInDisplayName
-                }
+                },
+                PeerUserId = targetId
             };
-            ViewModel.TargetUserId = targetId;
             this.DataContext = ViewModel;
+            ViewModel.LoadHistoryFromStore();
 
             // Báo lỗi gửi tin cho người dùng (thay vì chỉ ghi Console)
             ViewModel.SendFailed += msg => MessageBox.Show(msg, "Gửi tin nhắn thất bại", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             // ChatView bị tạo lại mỗi lần điều hướng: hủy đăng ký sự kiện socket khi rời màn hình
             // để ViewModel cũ không tiếp tục nhận tin (rò rỉ bộ nhớ + tin lọt sai khung).
+            Loaded += (_, _) => ScrollToBottom();
             Unloaded += (s, e) => ViewModel.Dispose();
 
             ChatTargetNameText.Text = targetDisplayName;
@@ -206,8 +209,22 @@ namespace ChatTCP.Client.Views
 
         private void EmojiButton_Click(object sender, RoutedEventArgs e)
         {
+            // Do StaysOpen="False", khi Popup đang mở và bấm lại nút Emoji,
+            // WPF tự đóng Popup TRƯỚC (ở MouseDown) rồi Click này mới chạy (ở MouseUp).
+            // Nếu không chặn lại, dòng dưới sẽ mở popup ra ngay lập tức thay vì để nó đóng.
+            if (_skipNextEmojiToggle)
+            {
+                _skipNextEmojiToggle = false;
+                return;
+            }
+
             EmojiPopup.IsOpen = !EmojiPopup.IsOpen;
             if (EmojiPopup.IsOpen) PopulateEmojis(EmojiSearchBox.Text);
+        }
+
+        private void EmojiPopup_Closed(object? sender, EventArgs e)
+        {
+            _skipNextEmojiToggle = true;
         }
 
         private void EmojiSearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -240,7 +257,8 @@ namespace ChatTCP.Client.Views
                 _recentEmojis.Insert(0, emoji);
                 if (_recentEmojis.Count > 20) _recentEmojis.RemoveAt(_recentEmojis.Count - 1);
                 PopulateEmojis();
-                EmojiPopup.IsOpen = false;
+                // Không đóng popup ở đây nữa -> cho phép chọn nhiều icon liên tiếp.
+                // Muốn đóng thì bấm lại nút Emoji (xem EmojiButton_Click).
             }
         }
 

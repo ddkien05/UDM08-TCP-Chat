@@ -127,11 +127,7 @@
                                             Margin="0,0,0,6">
                                             <TextBlock x:Name="ReplyContextText"
                                                    Style="{StaticResource Caption}"
-                                                   TextWrapping="Wrap">
-                                                <Run Text="{Binding ReplyTo.SenderName, Mode=OneWay}" FontWeight="SemiBold"/>
-                                                <Run Text=": "/>
-                                                <Run Text="{Binding ReplyTo.ContentSnippet, Mode=OneWay}"/>
-                                            </TextBlock>
+                                                   TextWrapping="Wrap"/>
                                         </Border>
 
                                         <!-- Bối cảnh tin nhắn chuyển tiếp (Forward Context) -->
@@ -148,16 +144,6 @@
                                                    TextWrapping="Wrap"
                                                    FontStyle="Italic"/>
                                         </Border>
-
-                                        <!-- Nhãn tin Broadcast (thông báo chung) -->
-                                        <TextBlock x:Name="BroadcastLabel"
-                                               Visibility="Collapsed"
-                                               Style="{StaticResource Caption}"
-                                               FontStyle="Italic"
-                                               Margin="0,0,0,4">
-                                            <Run Text="📢 Thông báo chung từ "/>
-                                            <Run Text="{Binding Sender.DisplayName, Mode=OneWay}"/>
-                                        </TextBlock>
 
                                         <!-- Nội dung chính của tin nhắn -->
                                         <TextBlock x:Name="MsgText" 
@@ -183,12 +169,10 @@
                                 <DataTrigger Binding="{Binding IsForwarded}" Value="True">
                                     <Setter TargetName="ForwardContextBorder" Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding HasReply}" Value="True">
-                                    <Setter TargetName="ReplyContextBorder" Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsBroadcast}" Value="True">
-                                    <Setter TargetName="BroadcastLabel" Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
+                                <!-- Chúng ta có thể dùng trigger để kiểm tra xem tin nhắn có thuộc loại ReplyTo hay không.
+                                 Tuy nhiên, do Trigger cơ bản trong WPF khó bắt trường hợp khác NULL, 
+                                 nên tốt nhất là ViewModel cung cấp thêm thuộc tính HasReply để Bind thẳng vào Visibility. 
+                                 Hiện tại, giữ logic đơn giản ở đây. -->
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -282,7 +266,8 @@
         <Popup x:Name="EmojiPopup"
                PlacementTarget="{Binding ElementName=EmojiButton}"
                Placement="Top"
-               StaysOpen="False">
+               StaysOpen="False"
+               Closed="EmojiPopup_Closed">
             <Border Background="{StaticResource BackgroundBrush}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="1"

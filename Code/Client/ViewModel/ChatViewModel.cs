@@ -269,8 +269,13 @@ namespace ChatTCP.Client.ViewModels
         {
             if (packet?.Data == null) return;
 
-            if (!string.IsNullOrEmpty(TargetUserId) &&
-                packet.Data.Sender?.UserId != TargetUserId)
+            // Chỉ nhận tin của đúng người đang chat (sửa TC_43)
+            if (!string.IsNullOrEmpty(PeerUserId) && packet.Data.Sender?.UserId != PeerUserId) return;
+
+            // Tránh trùng nếu tin đã được nạp từ store
+            if (!string.IsNullOrEmpty(packet.Data.MsgId) && Messages.Any(m => m.MsgId == packet.Data.MsgId)) return;
+
+            if (!string.IsNullOrEmpty(TargetUserId) && packet.Data.Sender?.UserId != TargetUserId)
             {
                 return;
             }
@@ -324,6 +329,15 @@ namespace ChatTCP.Client.ViewModels
             {
                 try { Task.Run(action); } catch { }
             }
+        }
+        //nạp lịch sử và lọc theo người đang chat
+        public string? PeerUserId { get; set; }
+
+        public void LoadHistoryFromStore()
+        {
+            if (string.IsNullOrEmpty(PeerUserId)) return;
+            foreach (var m in ConversationStore.Instance.GetMessages(PeerUserId))
+                Messages.Add(m);
         }
 
         /// <summary>
