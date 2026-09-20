@@ -36,31 +36,34 @@ namespace ChatTCP.Server.Services
             try
             {
                 string json = await MessageProtocol.ReceiveRawJsonAsync(stream);
-                if (json == null)
+                if (string.IsNullOrWhiteSpace(json))
                 {
                     client.Close();
                     return;
                 }
 
-                // Đọc trước field "type" để biết đây là gói LOGIN hay REGISTER
-                using JsonDocument doc = JsonDocument.Parse(json);
-                string type = doc.RootElement.GetProperty("type").GetString();
+                Packet<AuthRequestData>? requestPacket = JsonSerializer.Deserialize<Packet<AuthRequestData>>(json);
+                if (requestPacket == null || requestPacket.Data == null || string.IsNullOrWhiteSpace(requestPacket.Type))
+                {
+                    await SendAuthResponseAsync(stream, 0, 400, "Gói xác thực không hợp lệ", null);
+                    client.Close();
+                    return;
+                }
 
-                Packet<AuthRequestData> requestPacket = JsonSerializer.Deserialize<Packet<AuthRequestData>>(json);
                 AuthRequestData request = requestPacket.Data;
 
-                if (type == "REGISTER")
+                switch (requestPacket.Type)
                 {
-                    await HandleRegisterAsync(client, stream, requestPacket.Seq, request);
-                }
-                else if (type == "LOGIN")
-                {
-                    await HandleLoginAsync(client, stream, requestPacket.Seq, request);
-                }
-                else
-                {
-                    await SendAuthResponseAsync(stream, requestPacket.Seq, 400, "Loại gói tin không hợp lệ", null);
-                    client.Close();
+                    case "REGISTER":
+                        await HandleRegisterAsync(client, stream, requestPacket.Seq, request);
+                        break;
+                    case "LOGIN":
+                        await HandleLoginAsync(client, stream, requestPacket.Seq, request);
+                        break;
+                    default:
+                        await SendAuthResponseAsync(stream, requestPacket.Seq, 400, "Loại gói tin không hợp lệ", null);
+                        client.Close();
+                        break;
                 }
             }
             catch (Exception ex)
