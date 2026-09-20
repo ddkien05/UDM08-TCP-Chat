@@ -7,6 +7,10 @@
              d:DesignHeight="650"
              d:DesignWidth="950">
 
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
     <Grid Background="#F5F7FA">
 
         <Grid.ColumnDefinitions>
@@ -375,9 +379,19 @@
 
                                         <TextBlock Text="{Binding Name}"
                                                    FontSize="15"
-                                                   FontWeight="SemiBold"
                                                    Foreground="#111827"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
 
                                         <TextBlock Text="{Binding Username, StringFormat=@{0}}"
                                                    FontSize="11"
@@ -385,6 +399,7 @@
                                                    Margin="0,1,0,0"
                                                    TextTrimming="CharacterEllipsis"/>
 
+                                        <!-- Preview tin nhắn gần nhất, kiểu Messenger: đậm + đen khi chưa đọc -->
                                         <TextBlock x:Name="LastMessageText"
                                                    Text="{Binding LastMessage}"
                                                    FontSize="12"
@@ -394,9 +409,9 @@
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsOnline}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource OnlineStatus}"/>
-                                                            <Setter Property="FontWeight" Value="Medium"/>
+                                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                                            <Setter Property="Foreground" Value="#111827"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -405,13 +420,48 @@
 
                                     </StackPanel>
 
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding Time}"
-                                               FontSize="11"
-                                               Foreground="#9CA3AF"
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Top"
-                                               Margin="0,8,2,0"/>
+                                    <!-- GIỜ + BADGE THÔNG BÁO CHƯA ĐỌC -->
+                                    <StackPanel Grid.Column="2"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Margin="0,8,2,0">
+
+                                        <TextBlock Text="{Binding Time}"
+                                                   FontSize="11"
+                                                   HorizontalAlignment="Right">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <!-- Badge tròn số tin chưa đọc, giống chấm thông báo của Messenger -->
+                                        <Border Margin="0,6,0,0"
+                                                MinWidth="18"
+                                                Height="18"
+                                                CornerRadius="9"
+                                                Padding="5,0"
+                                                Background="{StaticResource PrimaryBrush}"
+                                                HorizontalAlignment="Right"
+                                                Visibility="{Binding HasUnread, Converter={StaticResource BoolToVis}}">
+
+                                            <TextBlock Text="{Binding UnreadCount}"
+                                                       FontSize="10"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                        </Border>
+
+                                    </StackPanel>
 
                                 </Grid>
 

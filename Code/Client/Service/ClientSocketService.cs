@@ -79,6 +79,11 @@ namespace ChatTCP.Client.Networking
         public event Action<Packet<UserListData>>? OnUserListReceived;
 
         /// <summary>
+        /// Bắn khi nhận được gói tin USER_STATUS_NOTIFY (1 user chuyển Online/Offline theo thời gian thực).
+        /// </summary>
+        public event Action<Packet<UserStatusNotifyData>>? OnUserStatusChanged;
+
+        /// <summary>
         /// Thiết lập kết nối TCP tới server chat và bắt đầu vòng lặp nhận tin.
         /// 
         /// Quy trình giao thức:
@@ -253,6 +258,10 @@ namespace ChatTCP.Client.Networking
             };
 
             await SendPacketAsync(packet);
+
+            // Ghi nhận ngay vào ConversationStore để danh sách chat cập nhật preview + giờ
+            // real-time, bất kể ContactListView có đang hiển thị hay không lúc này.
+            ConversationStore.Instance.RecordOutgoing(data.TargetId, data.Content, DateTime.Now);
         }
 
         /// <summary>
@@ -329,6 +338,10 @@ namespace ChatTCP.Client.Networking
                             HandleUserList(raw);
                             break;
 
+                        case "USER_STATUS_NOTIFY":
+                            HandleUserStatusNotify(raw);
+                            break;
+
                         default:
                             break;
                     }
@@ -362,6 +375,17 @@ namespace ChatTCP.Client.Networking
                 var chatPacket = JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
                 if (chatPacket != null)
                 {
+                    // Ghi nhận vào ConversationStore TRƯỚC khi bắn event UI, để danh sách chat
+                    // (nếu đang hiển thị) và lần load kế tiếp đều thấy tin nhắn mới nhất ngay lập tức.
+                    var receivedAt = chatPacket.Timestamp > 0
+                        ? DateTimeOffset.FromUnixTimeSeconds(chatPacket.Timestamp).LocalDateTime
+                        : DateTime.Now;
+
+                    ConversationStore.Instance.RecordIncoming(
+                        chatPacket.Data.Sender?.UserId ?? string.Empty,
+                        chatPacket.Data.Content,
+                        receivedAt);
+
                     InvokeOnUI(() => OnChatMessageReceived?.Invoke(chatPacket));
                 }
             }
@@ -427,6 +451,26 @@ namespace ChatTCP.Client.Networking
             catch (Exception ex)
             {
                 RaiseError($"User list parse error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Chuyển hướng gói tin USER_STATUS_NOTIFY tới sự kiện OnUserStatusChanged, để danh sách
+        /// chat cập nhật chấm Online/Offline theo thời gian thực mà không cần load lại toàn bộ.
+        /// </summary>
+        private void HandleUserStatusNotify(string raw)
+        {
+            try
+            {
+                var statusPacket = JsonSerializer.Deserialize<Packet<UserStatusNotifyData>>(raw);
+                if (statusPacket != null)
+                {
+                    InvokeOnUI(() => OnUserStatusChanged?.Invoke(statusPacket));
+                }
+            }
+            catch (Exception ex)
+            {
+                RaiseError($"User status parse error: {ex.Message}");
             }
         }
 

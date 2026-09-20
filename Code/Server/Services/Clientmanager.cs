@@ -3,6 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading.Tasks;
+using ChatTCP.Common.Models;
+using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
 
@@ -51,6 +54,10 @@ namespace ChatTCP.Server.Services
             }
 
             Console.WriteLine($"[ClientManager] {session.Username} online. Tổng số hiện tại: {Count}");
+
+            // Báo cho các client khác biết user này vừa online, để chấm trạng thái
+            // trên danh sách chat của họ cập nhật ngay mà không cần load lại (real-time).
+            BroadcastStatus(session, isOnline: true);
         }
 
         public void Remove(TcpClient client)
@@ -89,6 +96,10 @@ namespace ChatTCP.Server.Services
                 }
 
                 Console.WriteLine($"[ClientManager] {session.Username} offline. Tổng số hiện tại: {Count}");
+
+                // Báo cho các client khác biết user này vừa offline (thoát app / mất mạng /
+                // bị HeartbeatMonitor gỡ) để cập nhật chấm trạng thái real-time.
+                BroadcastStatus(session, isOnline: false);
             }
         }
 
@@ -123,6 +134,59 @@ namespace ChatTCP.Server.Services
                 lock (_lock)
                 {
                     return _sessions.Count;
+                }
+            }
+        }
+
+        // =====================================================
+        // THÔNG BÁO ONLINE/OFFLINE REAL-TIME (USER_STATUS_NOTIFY)
+        // =====================================================
+
+        /// <summary>
+        /// Đóng gói và gửi USER_STATUS_NOTIFY tới TẤT CẢ client khác (trừ chính người vừa đổi
+        /// trạng thái). Chạy nền (Task.Run) vì Add/Remove đang được gọi đồng bộ từ AuthHandler,
+        /// không muốn chặn luồng xử lý client hiện tại chỉ để chờ gửi thông báo cho người khác.
+        /// </summary>
+        private void BroadcastStatus(ClientSession session, bool isOnline)
+        {
+            var packet = new Packet<UserStatusNotifyData>
+            {
+                Type = "USER_STATUS_NOTIFY",
+                Seq = 0,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Data = new UserStatusNotifyData
+                {
+                    UserId = session.UserId.ToString(),
+                    DisplayName = session.DisplayName,
+                    Status = isOnline ? "ONLINE" : "OFFLINE",
+                    LastSeen = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                }
+            };
+
+            _ = BroadcastStatusAsync(packet, excludeUserId: session.UserId);
+        }
+
+        private async Task BroadcastStatusAsync(Packet<UserStatusNotifyData> packet, int excludeUserId)
+        {
+            var targets = GetAll().Where(s => s.UserId != excludeUserId).ToList();
+
+            foreach (var target in targets)
+            {
+                try
+                {
+                    await target.WriteLock.WaitAsync();
+                    try
+                    {
+                        await MessageProtocol.SendPacketAsync(target.TcpClient.GetStream(), packet);
+                    }
+                    finally
+                    {
+                        target.WriteLock.Release();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ClientManager] Lỗi gửi USER_STATUS_NOTIFY tới {target.Username}: {ex.Message}");
                 }
             }
         }
