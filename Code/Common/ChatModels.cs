@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ChatTCP.Common.Models;
 
@@ -70,6 +71,18 @@ public class ChatMessageData
     [JsonPropertyName("reply_to")] public ReplyInfo? ReplyTo { get; set; }
     [JsonPropertyName("is_forwarded")] public bool IsForwarded { get; set; }
     [JsonPropertyName("forward_from_name")] public string? ForwardFromName { get; set; }
+
+    /// <summary>
+    /// Chỉ dùng phía Client để canh giao diện (tin của mình bên phải, màu khác).
+    /// KHÔNG gửi qua mạng (JsonIgnore) vì server không cần và cũng không nên tin theo giá trị này từ client khác.
+    /// </summary>
+    [JsonIgnore] public bool IsMine { get; set; }
+
+    /// <summary>
+    /// Thời điểm hiển thị trên giao diện (giờ local), gán ở phía Client khi gửi/nhận.
+    /// KHÔNG gửi qua mạng — thời gian thật đã có sẵn ở Packet.Timestamp.
+    /// </summary>
+    [JsonIgnore] public DateTime LocalTime { get; set; } = DateTime.Now;
 }
 
 /// <summary>
@@ -83,6 +96,26 @@ public class UserStatusNotifyData
 
     [JsonPropertyName("status")] public string Status { get; set; } = "ONLINE"; // "ONLINE" hoặc "OFFLINE"
     [JsonPropertyName("last_seen")] public long LastSeen { get; set; }
+}
+
+/// <summary>
+/// Thông tin tóm tắt 1 user, dùng để trả về danh sách liên hệ (contact list) thật.
+/// </summary>
+public class UserSummaryData
+{
+    [JsonPropertyName("user_id")] public string UserId { get; set; } = string.Empty;
+    [JsonPropertyName("username")] public string Username { get; set; } = string.Empty;
+    [JsonPropertyName("display_name")] public string DisplayName { get; set; } = string.Empty;
+    [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
+    [JsonPropertyName("is_online")] public bool IsOnline { get; set; }
+}
+
+/// <summary>
+/// Dữ liệu trả về cho gói tin USER_LIST: toàn bộ user trong hệ thống (trừ chính mình).
+/// </summary>
+public class UserListData
+{
+    [JsonPropertyName("users")] public List<UserSummaryData> Users { get; set; } = new();
 }
 
 /// <summary>

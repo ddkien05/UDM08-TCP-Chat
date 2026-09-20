@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
 
+
 namespace ChatTCP.Client.Networking
 {
     /// <summary>
@@ -45,6 +46,12 @@ namespace ChatTCP.Client.Networking
         public bool IsConnected =>
             _client != null && _client.Connected && _stream != null;
 
+        /// <summary>UserId của tài khoản vừa đăng nhập thành công (đọc từ AUTH_RESPONSE).</summary>
+        public string LoggedInUserId { get; private set; } = string.Empty;
+
+        /// <summary>DisplayName của tài khoản vừa đăng nhập thành công.</summary>
+        public string LoggedInDisplayName { get; private set; } = string.Empty;
+
         /// <summary>
         /// Bắn khi nhận được gói tin CHAT_MSG thường từ server.
         /// Bao gồm cả loại Reply, Forward và tin nhắn tiêu chuẩn.
@@ -65,6 +72,16 @@ namespace ChatTCP.Client.Networking
         /// Bắn khi kết nối bị đóng hoặc mất.
         /// </summary>
         public event Action? OnDisconnected;
+
+        /// <summary>
+        /// Bắn khi nhận được gói tin USER_LIST (danh sách toàn bộ user để làm contact list thật).
+        /// </summary>
+        public event Action<Packet<UserListData>>? OnUserListReceived;
+
+        /// <summary>
+        /// Bắn khi nhận được gói tin USER_STATUS_NOTIFY (1 user chuyển Online/Offline theo thời gian thực).
+        /// </summary>
+        public event Action<Packet<UserStatusNotifyData>>? OnUserStatusChanged;
 
         /// <summary>
         /// Thiết lập kết nối TCP tới server chat và bắt đầu vòng lặp nhận tin.
@@ -91,10 +108,10 @@ namespace ChatTCP.Client.Networking
                 await _client.ConnectAsync(host, port);
                 _stream = _client.GetStream();
 
-                    // Gửi yêu cầu đăng nhập
+                // Gửi yêu cầu đăng nhập
                 var loginPacket = new Packet<object>
                 {
-                    Type = "LOGIN_REQ",
+                    Type = "LOGIN",
                     Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                     Data = new { username = username, password = password }
                 };
@@ -108,7 +125,7 @@ namespace ChatTCP.Client.Networking
                 }
 
                 var resPacket = JsonSerializer.Deserialize<Packet<JsonElement>>(rawRes);
-                if (resPacket == null || resPacket.Type != "AUTH_RES")
+                if (resPacket == null || resPacket.Type != "AUTH_RESPONSE")
                 {
                     throw new Exception("Phản hồi không hợp lệ từ Server.");
                 }
@@ -121,6 +138,16 @@ namespace ChatTCP.Client.Networking
                     RaiseError(message);
                     Disconnect();
                     return false;
+                }
+
+                // Lưu lại thông tin user đã đăng nhập để ChatView/ChatViewModel dùng làm Sender
+                if (resPacket.Data.TryGetProperty("user_id", out var userIdEl))
+                {
+                    LoggedInUserId = userIdEl.GetString() ?? string.Empty;
+                }
+                if (resPacket.Data.TryGetProperty("display_name", out var displayNameEl))
+                {
+                    LoggedInDisplayName = displayNameEl.GetString() ?? string.Empty;
                 }
 
                 // Nếu thành công, bắt đầu vòng lặp nhận tin nhắn
@@ -231,6 +258,10 @@ namespace ChatTCP.Client.Networking
             };
 
             await SendPacketAsync(packet);
+
+            // Ghi nhận ngay vào ConversationStore để danh sách chat cập nhật preview + giờ
+            // real-time, bất kể ContactListView có đang hiển thị hay không lúc này.
+            ConversationStore.Instance.RecordOutgoing(data.TargetId, data.Content, DateTime.Now);
         }
 
         /// <summary>
@@ -299,30 +330,20 @@ namespace ChatTCP.Client.Networking
                             HandleError(raw);
                             break;
 
-                        case "AUTH_RSP":
+                        case "AUTH_RESPONSE":
                             Console.WriteLine("Đã nhận phản hồi xác thực");
+                            break;
+
+                        case "USER_LIST":
+                            HandleUserList(raw);
+                            break;
+
+                        case "USER_STATUS_NOTIFY":
+                            HandleUserStatusNotify(raw);
                             break;
 
                         default:
                             break;
-                    }
-
-                    // Parse ChatMessageData
-                    try
-                    {
-                        var chatPacket =
-                            JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
-
-                        if (chatPacket != null)
-                        {
-                            InvokeOnUI(() =>
-                                OnChatMessageReceived?.Invoke(chatPacket));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        RaiseError(
-                            $"Receive parse error: {ex.Message}");
                     }
                 }
             }
@@ -354,6 +375,17 @@ namespace ChatTCP.Client.Networking
                 var chatPacket = JsonSerializer.Deserialize<Packet<ChatMessageData>>(raw);
                 if (chatPacket != null)
                 {
+                    // Ghi nhận vào ConversationStore TRƯỚC khi bắn event UI, để danh sách chat
+                    // (nếu đang hiển thị) và lần load kế tiếp đều thấy tin nhắn mới nhất ngay lập tức.
+                    var receivedAt = chatPacket.Timestamp > 0
+                        ? DateTimeOffset.FromUnixTimeSeconds(chatPacket.Timestamp).LocalDateTime
+                        : DateTime.Now;
+
+                    ConversationStore.Instance.RecordIncoming(
+                        chatPacket.Data.Sender?.UserId ?? string.Empty,
+                        chatPacket.Data.Content,
+                        receivedAt);
+
                     InvokeOnUI(() => OnChatMessageReceived?.Invoke(chatPacket));
                 }
             }
@@ -401,6 +433,61 @@ namespace ChatTCP.Client.Networking
             {
                 RaiseError($"Error parse error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Chuyển hướng gói tin USER_LIST tới sự kiện OnUserListReceived.
+        /// </summary>
+        private void HandleUserList(string raw)
+        {
+            try
+            {
+                var listPacket = JsonSerializer.Deserialize<Packet<UserListData>>(raw);
+                if (listPacket != null)
+                {
+                    InvokeOnUI(() => OnUserListReceived?.Invoke(listPacket));
+                }
+            }
+            catch (Exception ex)
+            {
+                RaiseError($"User list parse error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Chuyển hướng gói tin USER_STATUS_NOTIFY tới sự kiện OnUserStatusChanged, để danh sách
+        /// chat cập nhật chấm Online/Offline theo thời gian thực mà không cần load lại toàn bộ.
+        /// </summary>
+        private void HandleUserStatusNotify(string raw)
+        {
+            try
+            {
+                var statusPacket = JsonSerializer.Deserialize<Packet<UserStatusNotifyData>>(raw);
+                if (statusPacket != null)
+                {
+                    InvokeOnUI(() => OnUserStatusChanged?.Invoke(statusPacket));
+                }
+            }
+            catch (Exception ex)
+            {
+                RaiseError($"User status parse error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Yêu cầu server gửi lại danh sách toàn bộ user (contact list thật) kèm trạng thái online.
+        /// Kết quả sẽ trả về qua sự kiện OnUserListReceived.
+        /// </summary>
+        public async Task RequestUserListAsync()
+        {
+            var packet = new Packet<object?>
+            {
+                Type = "GET_USERS",
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Data = null
+            };
+
+            await SendPacketAsync(packet);
         }
 
         /// <summary>

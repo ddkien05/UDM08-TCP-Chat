@@ -9,15 +9,15 @@ namespace ChatTCP.Client.Views
     {
         private readonly ClientSocketService _socketService;
 
-        public event Action? LoginSucceeded;
+        public event Action<ClientSocketService>? LoginSucceeded;
         public event Action? RegisterRequested;
 
         public LoginView()
         {
             InitializeComponent();
 
-            _socketService = new ClientSocketService(Dispatcher);
-            _socketService.OnError += ShowError;
+            _socketService =
+                new ClientSocketService(Dispatcher);
         }
 
         private async void LoginButton_Click(
@@ -40,18 +40,14 @@ namespace ChatTCP.Client.Views
             }
 
             string serverIp = ServerIpTextBox.Text.Trim();
-
             if (string.IsNullOrWhiteSpace(serverIp))
             {
                 serverIp = "127.0.0.1";
             }
 
-            if (!int.TryParse(
-                PortTextBox.Text.Trim(),
-                out int port))
+            if (!int.TryParse(PortTextBox.Text.Trim(), out int port))
             {
-                ShowError(
-                    "Cổng (Port) không hợp lệ. Vui lòng nhập số.");
+                ShowError("Cổng (Port) không hợp lệ. Vui lòng nhập số.");
                 return;
             }
 
@@ -59,19 +55,15 @@ namespace ChatTCP.Client.Views
 
             try
             {
-                bool loginSuccess =
-                    await _socketService.LoginAsync(
-                        serverIp,
-                        port,
-                        username,
-                        password);
+                bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
 
                 if (!loginSuccess)
                 {
+                    // Lỗi đã được phát qua sự kiện OnError của ClientSocketService
                     return;
                 }
 
-                LoginSucceeded?.Invoke();
+                LoginSucceeded?.Invoke(_socketService);
             }
             catch (Exception ex)
             {
@@ -87,12 +79,11 @@ namespace ChatTCP.Client.Views
             }
         }
 
-        private void RegisterNavButton_Click(
-            object sender,
-            RoutedEventArgs e)
+        private void RegisterNavButton_Click(object sender, RoutedEventArgs e)
         {
             RegisterRequested?.Invoke();
         }
+
 
         private void ShowError(string message)
         {

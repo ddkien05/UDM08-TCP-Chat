@@ -1,4 +1,6 @@
-﻿namespace ChatTCP.Server.Data
+﻿using System.Collections.Generic;
+
+namespace ChatTCP.Server.Data
 {
     /// Đại diện cho 1 dòng dữ liệu trong bảng Users.
     public class UserModel
@@ -27,5 +29,8 @@
 
         ///Đánh dấu 1 user đang online hay offline
         void SetOnlineStatus(int userId, bool isOnline);
+
+        ///Lấy toàn bộ user trong hệ thống (dùng để hiển thị danh sách liên hệ thật)
+        List<UserModel> GetAllUsers();
     }
 }

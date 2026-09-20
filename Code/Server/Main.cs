@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using ChatTCP.Server.Data;
 using ChatTCP.Server.Networking;
 using ChatTCP.Server.Services;
@@ -12,90 +11,45 @@ namespace ChatTCP.Server
         {
             try
             {
-              
-                // 1. KHỞI TẠO DATABASE
-      
-
                 DbConnectionFactory.Initialize();
-
-                Console.WriteLine(
-                    "Khởi tạo Database thành công!");
+                Console.WriteLine("Khởi tạo Database thành công!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(
-                    $"Lỗi khởi tạo Database: {ex.Message}");
-
+                Console.WriteLine($"Lỗi khởi tạo Database: {ex.Message}");
                 return;
             }
 
-     
-            // 2. REPOSITORY
-
-
-            IUserRepository userRepository =
-                new UserRepository();
-
-            IMessageRepository messageRepository =
-                new MessageRepository();
-
-
-            // 3. CLIENT MANAGER
-        
+            IUserRepository userRepository = new UserRepository();
 
             ClientManager clientManager =
                 new ClientManager(userRepository);
 
-            // 4. MESSAGE ROUTER
-       
+            IMessageRepository messageRepository =
+                new MessageRepository();
 
             MessageRouter messageRouter =
                 new MessageRouter(
                     clientManager.ClientMap,
                     messageRepository);
 
-            // 5. AUTH HANDLER
-  
-
             AuthHandler authHandler =
-                new AuthHandler(
-                    userRepository,
-                    clientManager,
-                    messageRouter);
-
-            // 6. CHAT SERVER
-     
+                new AuthHandler(userRepository, clientManager, messageRouter);
 
             ChatServer server =
                 new ChatServer(authHandler);
 
-            // 7. HEARTBEAT
-       
-
             HeartbeatMonitor heartbeatMonitor =
                 new HeartbeatMonitor(clientManager);
 
-    
-            // 8. START SERVER
-     
-
             server.Start();
-
             heartbeatMonitor.Start();
 
-            Console.WriteLine(
-                "Nhấn Enter để dừng server...");
-
+            Console.WriteLine("Nhấn Enter để dừng server...");
             Console.ReadLine();
 
-
-            // 9. STOP SERVER
-
-
             heartbeatMonitor.Stop();
-
             server.Stop();
         }
     }
 }
-
