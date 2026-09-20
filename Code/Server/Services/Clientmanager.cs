@@ -8,27 +8,29 @@ using ChatTCP.Server.Networking;
 
 namespace ChatTCP.Server.Services
 {
- 
+
     /// Quản lý danh sách client ĐANG ONLINE (đã login/register thành công).
     /// Giữ đồng thời 2 cấu trúc dữ liệu song song:
     /// - _sessions: List đầy đủ thông tin (UserId, Username, DisplayName, TcpClient) — dùng nội bộ.
     /// - _clientMap: ConcurrentDictionary&lt;string UserId, NetworkStream&gt; — đúng kiểu mà
     ///   MessageRouter.cs cần để gửi tin nhắn thẳng tới đúng người.
- 
+
     public class ClientManager
     {
         private readonly List<ClientSession> _sessions = new List<ClientSession>();
         private readonly object _lock = new object();
         private readonly IUserRepository _userRepository;
-        private readonly ConcurrentDictionary<string, NetworkStream> _clientMap = new();
+        private readonly ConcurrentDictionary<string, ClientSession> _clientMap = new();
 
         public ClientManager(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
 
-        /// <summary>Đưa cho MessageRouter dùng — cả 2 lớp cùng tham chiếu tới 1 Dictionary duy nhất.</summary>
-        public ConcurrentDictionary<string, NetworkStream> ClientMap => _clientMap;
+        /// <summary>Đưa cho MessageRouter dùng — cả 2 lớp cùng tham chiếu tới 1 Dictionary duy nhất.
+        /// Lưu ClientSession (không phải NetworkStream thô) để Router lấy được cả WriteLock,
+        /// tránh 2 luồng ghi đồng thời vào cùng 1 socket làm hỏng khung tin.</summary>
+        public ConcurrentDictionary<string, ClientSession> ClientMap => _clientMap;
 
         public void Add(ClientSession session)
         {
@@ -37,7 +39,7 @@ namespace ChatTCP.Server.Services
                 _sessions.Add(session);
             }
 
-            _clientMap[session.UserId.ToString()] = session.TcpClient.GetStream();
+            _clientMap[session.UserId.ToString()] = session;
 
             try
             {

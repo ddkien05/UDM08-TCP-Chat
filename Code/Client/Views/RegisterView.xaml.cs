@@ -1,7 +1,10 @@
+using ChatTCP.Common.Models;
+using ChatTCP.Common.Protocol;
 using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,14 +36,14 @@ namespace ChatTCP.Client.Views
 
             try
             {
-                var res = await SendRegisterCommandAsync(username, password, displayName);
-                if (res.StartsWith("OK;"))
+                var (ok, message) = await SendRegisterCommandAsync(username, password, displayName);
+                if (ok)
                 {
                     RegistrationSucceeded?.Invoke();
                 }
                 else
                 {
-                    ShowError(res);
+                    ShowError(message);
                 }
             }
             catch (Exception ex)
@@ -69,22 +72,37 @@ namespace ChatTCP.Client.Views
         /// Định dạng: REGISTER;username;password;displayName
         /// Trả về dòng phản hồi từ server.
         /// </summary>
-        private Task<string> SendRegisterCommandAsync(string username, string password, string displayName)
+        private async Task<(bool ok, string message)> SendRegisterCommandAsync(
+    string username, string password, string displayName)
         {
-            return Task.Run(() =>
-            {
-                using var client = new TcpClient();
-                client.Connect("127.0.0.1", 8888);
-                using var stream = client.GetStream();
-                using var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
-                using var reader = new StreamReader(stream, Encoding.UTF8);
+            using var client = new TcpClient();
+            await client.ConnectAsync("127.0.0.1", 8888);
+            using var stream = client.GetStream();
 
-                string cmd = $"REGISTER;{username};{password};{displayName}";
-                writer.WriteLine(cmd);
-                // Read single line response
-                string? resp = reader.ReadLine();
-                return resp ?? "FAIL;No response";
-            });
+            var packet = new Packet<AuthRequestData>
+            {
+                Type = "REGISTER",
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Data = new AuthRequestData
+                {
+                    Username = username,
+                    Password = password,
+                    DisplayName = displayName
+                }
+            };
+            await MessageProtocol.SendPacketAsync(stream, packet);
+
+            string? raw = await MessageProtocol.ReceiveRawJsonAsync(stream);
+            if (string.IsNullOrEmpty(raw))
+                return (false, "Không nhận được phản hồi từ Server.");
+
+            var res = JsonSerializer.Deserialize<Packet<JsonElement>>(raw);
+            if (res == null || res.Type != "AUTH_RESPONSE")
+                return (false, "Phản hồi không hợp lệ từ Server.");
+
+            int code = res.Data.GetProperty("code").GetInt32();
+            string msg = res.Data.GetProperty("message").GetString() ?? "Lỗi không xác định";
+            return (code == 200, msg);
         }
 
         private void PhoneNumberTextBox_TextChanged(object sender, TextChangedEventArgs e)

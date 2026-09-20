@@ -41,11 +41,14 @@ namespace Client
             MainContent.Content = contactList;
         }
 
-        public void ShowChatView(string targetUserId, string targetDisplayName)
+        public void ShowChatView(string targetUserId, string targetDisplayName, bool isOnline)
         {
             if (_socketService == null) return;
 
-            MainContent.Content = new ChatView(_socketService, targetUserId, targetDisplayName);
+            var chatView = new ChatView(_socketService, targetUserId, targetDisplayName, isOnline);
+            chatView.BackRequested += () => ShowContactList(_socketService);
+
+            MainContent.Content = chatView;
         }
     }
 }

@@ -3,16 +3,17 @@ using System.Net.Sockets;
 using ChatTCP.Common.Models;
 using ChatTCP.Common.Protocol;
 using ChatTCP.Server.Data;
+using ChatTCP.Server.Networking;
 
 namespace ChatTCP.Server.Services;
 
 public class MessageRouter
 {
-    private readonly ConcurrentDictionary<string, NetworkStream> _clientMap;
+    private readonly ConcurrentDictionary<string, ClientSession> _clientMap;
     private readonly IMessageRepository _messageRepository;
 
     public MessageRouter(
-        ConcurrentDictionary<string, NetworkStream> clientMap,
+        ConcurrentDictionary<string, ClientSession> clientMap,
         IMessageRepository messageRepository)
     {
         _clientMap = clientMap;
@@ -25,7 +26,7 @@ public class MessageRouter
     /// </summary>
     public async Task RouteChatMessageAsync(
         Packet<ChatMessageData> chatPacket,
-        NetworkStream senderStream)
+        ClientSession senderSession)
     {
         try
         {
@@ -52,7 +53,7 @@ public class MessageRouter
                     if (originalMessage == null)
                     {
                         await SendErrorAsync(
-                            senderStream,
+                            senderSession,
                             chatPacket.Seq,
                             404,
                             $"Không tìm thấy tin nhắn gốc ID={replyMessageId}."
@@ -108,7 +109,7 @@ public class MessageRouter
             if (targets.Length == 0)
             {
                 await SendErrorAsync(
-                    senderStream,
+                    senderSession,
                     chatPacket.Seq,
                     400,
                     "Không có người nhận."
@@ -125,8 +126,13 @@ public class MessageRouter
             {
                 if (_clientMap.TryGetValue(
                     targetId,
-                    out var targetStream))
+                    out var targetSession))
                 {
+                    // QUAN TRỌNG: phải khóa (WriteLock) trước khi ghi, vì stream này
+                    // có thể đang được CHÍNH luồng của targetSession ghi phản hồi khác
+                    // (VD: USER_LIST) tại cùng thời điểm. Ghi chồng chéo không khóa
+                    // sẽ làm hỏng khung tin phía nhận, gây rớt kết nối đột ngột.
+                    await targetSession.WriteLock.WaitAsync();
                     try
                     {
                         Console.WriteLine(
@@ -135,7 +141,7 @@ public class MessageRouter
                         );
 
                         await MessageProtocol.SendPacketAsync(
-                            targetStream,
+                            targetSession.TcpClient.GetStream(),
                             chatPacket
                         );
                     }
@@ -145,6 +151,10 @@ public class MessageRouter
                             $"[ROUTER] Không thể gửi đến {targetId}: " +
                             ex.Message
                         );
+                    }
+                    finally
+                    {
+                        targetSession.WriteLock.Release();
                     }
                 }
                 else
@@ -168,7 +178,7 @@ public class MessageRouter
     // =============================================================
 
     private static async Task SendErrorAsync(
-        NetworkStream stream,
+        ClientSession senderSession,
         int seq,
         int code,
         string message)
@@ -186,9 +196,17 @@ public class MessageRouter
             }
         };
 
-        await MessageProtocol.SendPacketAsync(
-            stream,
-            errorPacket
-        );
+        await senderSession.WriteLock.WaitAsync();
+        try
+        {
+            await MessageProtocol.SendPacketAsync(
+                senderSession.TcpClient.GetStream(),
+                errorPacket
+            );
+        }
+        finally
+        {
+            senderSession.WriteLock.Release();
+        }
     }
 }

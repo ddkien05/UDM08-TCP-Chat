@@ -15,7 +15,7 @@ namespace ChatTCP.Client.Views
         private readonly ClientSocketService? _socketService;
         private readonly string _targetId;
         public ViewModels.ChatViewModel ViewModel { get; }
-        
+
         private string? _replyMsgId;
         private string? _replySenderName;
         private string? _replySnippet;
@@ -32,11 +32,16 @@ namespace ChatTCP.Client.Views
         };
 
         /// <summary>
+        /// Bắn khi người dùng bấm nút quay lại (←) để trở về danh sách liên hệ.
+        /// </summary>
+        public event Action? BackRequested;
+
+        /// <summary>
         /// Constructor cũ - CHỈ dùng cho design-time preview trong Visual Studio.
         /// KHÔNG dùng khi chạy thật vì socket này chưa hề đăng nhập (IsConnected = false),
         /// nên mọi tin nhắn gửi đi sẽ không tới được server.
         /// </summary>
-        public ChatView() : this(new ClientSocketService(), "user_test", "Contact (demo)")
+        public ChatView() : this(new ClientSocketService(), "user_test", "Contact (demo)", false)
         {
         }
 
@@ -44,7 +49,7 @@ namespace ChatTCP.Client.Views
         /// Constructor thật: dùng lại đúng ClientSocketService đã LoginAsync thành công
         /// (đang chạy vòng lặp nhận tin) và targetId thật của người/nhóm sẽ chat cùng.
         /// </summary>
-        public ChatView(ClientSocketService socketService, string targetId, string targetDisplayName)
+        public ChatView(ClientSocketService socketService, string targetId, string targetDisplayName, bool isOnline = false)
         {
             InitializeComponent();
             _socketService = socketService;
@@ -61,6 +66,15 @@ namespace ChatTCP.Client.Views
             this.DataContext = ViewModel;
 
             ChatTargetNameText.Text = targetDisplayName;
+            ChatTargetInitial.Text = string.IsNullOrWhiteSpace(targetDisplayName)
+                ? "?"
+                : targetDisplayName.Trim().Substring(0, 1).ToUpper();
+
+            SetOnlineStatus(isOnline);
+            EmptyChatText.Text = $"Hãy gửi lời chào đầu tiên tới {targetDisplayName}!";
+
+            UpdateEmptyChatState();
+            ViewModel.Messages.CollectionChanged += (s, e) => UpdateEmptyChatState();
 
             // Gắn event để auto scroll xuống dưới khi có tin nhắn mới (chỉ scroll nếu đang ở đáy)
             ViewModel.Messages.CollectionChanged += (s, e) =>
@@ -87,9 +101,9 @@ namespace ChatTCP.Client.Views
                 {
                     // Ghi nhớ vị trí height hiện tại của nội dung
                     double oldHeight = MessageScrollViewer.ExtentHeight;
-                    
+
                     bool loaded = await ViewModel.LoadHistoryAsync();
-                    
+
                     if (loaded)
                     {
                         // Sau khi nạp thêm vào đầu, ExtentHeight sẽ tăng lên. 
@@ -105,8 +119,42 @@ namespace ChatTCP.Client.Views
         // Các hàm xử lý giao diện từ SocketService cũ (OnChatMessageReceived) đã được xóa bỏ vì ViewModel tự handle.
 
         /// <summary>
-        /// Cuộn xuống dưới cùng để hiển thị tin nhắn mới nhất
+        /// Xử lý khi người dùng bấm nút quay lại (←) ở header.
         /// </summary>
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            BackRequested?.Invoke();
+        }
+
+        /// <summary>
+        /// Cập nhật chấm + chữ trạng thái online ở header theo dữ liệu thật từ contact list.
+        /// </summary>
+        private void SetOnlineStatus(bool isOnline)
+        {
+            if (isOnline)
+            {
+                ChatStatusDot.Fill = (System.Windows.Media.Brush)FindResource("OnlineStatus");
+                ChatStatusText.Text = "Đang hoạt động";
+            }
+            else
+            {
+                ChatStatusDot.Fill = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x9C, 0xA3, 0xAF));
+                ChatStatusText.Text = "Ngoại tuyến";
+            }
+        }
+
+        /// <summary>
+        /// Hiện khung "chưa có tin nhắn nào" khi cuộc trò chuyện đang trống,
+        /// tránh màn hình trắng trơ gây khó hiểu cho người dùng mới mở chat.
+        /// </summary>
+        private void UpdateEmptyChatState()
+        {
+            bool isEmpty = ViewModel.Messages.Count == 0;
+            EmptyChatPanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+            MessageScrollViewer.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         private void ScrollToBottom()
         {
             try

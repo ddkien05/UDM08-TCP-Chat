@@ -24,9 +24,9 @@ namespace ChatTCP.Client.Views
 
         /// <summary>
         /// Bắn khi người dùng chọn 1 liên hệ để mở màn hình chat.
-        /// (targetUserId, targetDisplayName)
+        /// (targetUserId, targetDisplayName, isOnline)
         /// </summary>
-        public event Action<string, string>? ChatSelected;
+        public event Action<string, string, bool>? ChatSelected;
 
         public ContactListView() : this(null)
         {
@@ -105,6 +105,7 @@ namespace ChatTCP.Client.Views
                     Username = user.Username,
                     UserId = user.UserId,
                     LastMessage = user.IsOnline ? "Đang hoạt động" : "Ngoại tuyến",
+                    IsOnline = user.IsOnline,
                     Time = string.Empty
                 });
             }
@@ -250,7 +251,7 @@ namespace ChatTCP.Client.Views
                     ? chat.Username
                     : chat.UserId;
 
-                ChatSelected?.Invoke(targetId, chat.Name);
+                ChatSelected?.Invoke(targetId, chat.Name, chat.IsOnline);
 
                 // Bỏ chọn để có thể bấm lại cùng 1 contact và mở lại ChatView
                 ChatList.SelectedItem = null;
@@ -456,6 +457,9 @@ namespace ChatTCP.Client.Views
 
         public string LastMessage { get; set; }
             = string.Empty;
+
+        /// <summary>Trạng thái online thật (dùng để tô màu chấm trạng thái trong danh sách).</summary>
+        public bool IsOnline { get; set; }
 
         public string Time { get; set; }
             = string.Empty;

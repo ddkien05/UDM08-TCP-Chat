@@ -71,6 +71,18 @@ public class ChatMessageData
     [JsonPropertyName("reply_to")] public ReplyInfo? ReplyTo { get; set; }
     [JsonPropertyName("is_forwarded")] public bool IsForwarded { get; set; }
     [JsonPropertyName("forward_from_name")] public string? ForwardFromName { get; set; }
+
+    /// <summary>
+    /// Chỉ dùng phía Client để canh giao diện (tin của mình bên phải, màu khác).
+    /// KHÔNG gửi qua mạng (JsonIgnore) vì server không cần và cũng không nên tin theo giá trị này từ client khác.
+    /// </summary>
+    [JsonIgnore] public bool IsMine { get; set; }
+
+    /// <summary>
+    /// Thời điểm hiển thị trên giao diện (giờ local), gán ở phía Client khi gửi/nhận.
+    /// KHÔNG gửi qua mạng — thời gian thật đã có sẵn ở Packet.Timestamp.
+    /// </summary>
+    [JsonIgnore] public DateTime LocalTime { get; set; } = DateTime.Now;
 }
 
 /// <summary>

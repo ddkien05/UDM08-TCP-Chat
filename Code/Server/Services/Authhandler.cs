@@ -10,12 +10,12 @@ using ChatTCP.Server.Networking;
 
 namespace ChatTCP.Server.Services
 {
-   
+
     /// Xử lý Login/Register bằng đúng giao thức JSON 
     /// Packet&lt;AuthRequestData&gt;/Packet&lt;AuthResponseData&gt;)
     ///
 
-    
+
     public class AuthHandler
     {
         private readonly IUserRepository _userRepository;
@@ -200,7 +200,7 @@ namespace ChatTCP.Server.Services
                                 chatPacket.Data.Sender.UserId = session.UserId.ToString();
                                 chatPacket.Data.Sender.DisplayName = session.DisplayName;
 
-                                await _messageRouter.RouteChatMessageAsync(chatPacket, stream);
+                                await _messageRouter.RouteChatMessageAsync(chatPacket, session);
                             }
                             break;
 
@@ -254,7 +254,15 @@ namespace ChatTCP.Server.Services
                 Data = new UserListData { Users = users }
             };
 
-            await MessageProtocol.SendPacketAsync(stream, responsePacket);
+            await session.WriteLock.WaitAsync();
+            try
+            {
+                await MessageProtocol.SendPacketAsync(stream, responsePacket);
+            }
+            finally
+            {
+                session.WriteLock.Release();
+            }
         }
 
         /// Đóng gói kết quả thành Packet&lt;AuthResponseData&gt; rồi gửi qua MessageProtocol.

@@ -90,7 +90,7 @@ namespace ChatTCP.Client.ViewModels
             if (string.IsNullOrWhiteSpace(content)) return;
             if (_socketService == null || !_socketService.IsConnected)
             {
-                InvokeOnUI(() => 
+                InvokeOnUI(() =>
                 {
                     var msg = new ChatMessageData
                     {
@@ -98,7 +98,9 @@ namespace ChatTCP.Client.ViewModels
                         Content = content,
                         TargetType = targetType,
                         TargetId = targetId,
-                        Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" }
+                        Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
+                        IsMine = true,
+                        LocalTime = DateTime.Now
                     };
                     Messages.Add(msg);
                 });
@@ -113,7 +115,9 @@ namespace ChatTCP.Client.ViewModels
                     Content = content,
                     TargetType = targetType,
                     TargetId = targetId,
-                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" }
+                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
+                    IsMine = true,
+                    LocalTime = DateTime.Now
                 };
 
                 await _socketService.SendChatMessageAsync(data);
@@ -123,7 +127,7 @@ namespace ChatTCP.Client.ViewModels
             }
             catch (Exception ex)
             {
-                InvokeOnUI(() => 
+                InvokeOnUI(() =>
                 {
                     // Could raise an error event here
                     Console.WriteLine($"Send error: {ex.Message}");
@@ -162,7 +166,9 @@ namespace ChatTCP.Client.ViewModels
                         MsgId = replyToMsgId,
                         SenderName = replySenderName,
                         ContentSnippet = replySnippet
-                    }
+                    },
+                    IsMine = true,
+                    LocalTime = DateTime.Now
                 };
 
                 await _socketService.SendChatMessageAsync(data);
@@ -198,7 +204,9 @@ namespace ChatTCP.Client.ViewModels
                     TargetId = targetId,
                     Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
                     IsForwarded = true,
-                    ForwardFromName = forwardFromName
+                    ForwardFromName = forwardFromName,
+                    IsMine = true,
+                    LocalTime = DateTime.Now
                 };
 
                 await _socketService.SendChatMessageAsync(data);
@@ -230,7 +238,9 @@ namespace ChatTCP.Client.ViewModels
                     Content = content,
                     TargetType = "BROADCAST",
                     TargetId = "*", // Special marker for broadcast
-                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" }
+                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
+                    IsMine = true,
+                    LocalTime = DateTime.Now
                 };
 
                 await _socketService.SendChatMessageAsync(data);
@@ -325,6 +335,11 @@ namespace ChatTCP.Client.ViewModels
         private void HandleChatMessageReceived(Packet<ChatMessageData> packet)
         {
             if (packet?.Data == null) return;
+
+            packet.Data.IsMine = false;
+            packet.Data.LocalTime = packet.Timestamp > 0
+                ? DateTimeOffset.FromUnixTimeSeconds(packet.Timestamp).LocalDateTime
+                : DateTime.Now;
 
             InvokeOnUI(() =>
             {
