@@ -63,7 +63,15 @@ namespace ChatTCP.Client.Views
                     DisplayName = _socketService.LoggedInDisplayName
                 }
             };
+            ViewModel.TargetUserId = targetId;
             this.DataContext = ViewModel;
+
+            // Báo lỗi gửi tin cho người dùng (thay vì chỉ ghi Console)
+            ViewModel.SendFailed += msg => MessageBox.Show(msg, "Gửi tin nhắn thất bại", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+            // ChatView bị tạo lại mỗi lần điều hướng: hủy đăng ký sự kiện socket khi rời màn hình
+            // để ViewModel cũ không tiếp tục nhận tin (rò rỉ bộ nhớ + tin lọt sai khung).
+            Unloaded += (s, e) => ViewModel.Dispose();
 
             ChatTargetNameText.Text = targetDisplayName;
             ChatTargetInitial.Text = string.IsNullOrWhiteSpace(targetDisplayName)
@@ -246,41 +254,38 @@ namespace ChatTCP.Client.Views
 
         private void ReplyMenu_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuItem mi && mi.Parent is ContextMenu cm && cm.PlacementTarget is Border border)
-            {
-                string text = GetMessageTextFromBorder(border);
-                string senderName = border.HorizontalAlignment == HorizontalAlignment.Right ? "You" : "Contact";
-                _replyMsgId = Guid.NewGuid().ToString();
-                _replySenderName = senderName;
-                _replySnippet = Truncate(text, 200);
-                ReplyLabel.Text = $"↩ Replying to {_replySenderName}";
-                ReplySnippet.Text = _replySnippet;
-                ReplyPreview.Visibility = Visibility.Visible;
-                // hide forward if any
-                ForwardPreview.Visibility = Visibility.Collapsed;
-                _isForward = false;
-                _forwardFromName = null;
-            }
+            if (GetSelectedMessage(sender) is not ChatMessageData msg) return;
+
+            // Dùng MsgId thật của tin gốc để server đối chiếu được tin đang được trả lời
+            _replyMsgId = msg.MsgId;
+            _replySenderName = GetDisplaySender(msg);
+            _replySnippet = Truncate(msg.Content, 200);
+            ReplyLabel.Text = $"↩ Đang trả lời {_replySenderName}";
+            ReplySnippet.Text = _replySnippet;
+            ReplyPreview.Visibility = Visibility.Visible;
+
+            // Chỉ một trạng thái soạn tại một thời điểm: tắt forward nếu đang bật
+            ClearForwardState();
+            MessageInputBox.Focus();
         }
 
         private void ForwardMenu_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuItem mi && mi.Parent is ContextMenu cm && cm.PlacementTarget is Border border)
-            {
-                string text = GetMessageTextFromBorder(border);
-                string senderName = border.HorizontalAlignment == HorizontalAlignment.Right ? "You" : "Contact";
-                _isForward = true;
-                _forwardFromName = senderName;
-                _forwardMsgId = Guid.NewGuid().ToString();
-                ForwardLabel.Text = "↗ Forwarding message";
-                ForwardSnippet.Text = $"From: {senderName} — {Truncate(text, 200)}";
-                ForwardPreview.Visibility = Visibility.Visible;
-                // hide reply if any
-                ReplyPreview.Visibility = Visibility.Collapsed;
-                _replyMsgId = null;
-                _replySenderName = null;
-                _replySnippet = null;
-            }
+            if (GetSelectedMessage(sender) is not ChatMessageData msg) return;
+
+            _isForward = true;
+            _forwardFromName = GetDisplaySender(msg);
+            _forwardMsgId = msg.MsgId;
+            ForwardLabel.Text = "↗ Chuyển tiếp tin nhắn";
+            ForwardSnippet.Text = $"Từ {_forwardFromName} — {Truncate(msg.Content, 200)}";
+            ForwardPreview.Visibility = Visibility.Visible;
+
+            // Nội dung chuyển tiếp là nội dung tin gốc; người dùng vẫn có thể chỉnh trước khi gửi
+            MessageInputBox.Text = msg.Content;
+            MessageInputBox.CaretIndex = MessageInputBox.Text.Length;
+            MessageInputBox.Focus();
+
+            ClearReplyState();
         }
 
         private void CancelReply_Click(object sender, RoutedEventArgs e)
@@ -315,18 +320,26 @@ namespace ChatTCP.Client.Views
             return value.Length <= maxLength ? value : value.Substring(0, maxLength) + "...";
         }
 
-        private string GetMessageTextFromBorder(Border border)
+        /// <summary>
+        /// Lấy ChatMessageData của bong bóng chat được bấm chuột phải (DataContext của Border).
+        /// </summary>
+        private static ChatMessageData? GetSelectedMessage(object sender)
         {
-            if (border.Child is TextBlock tb) return tb.Text;
-            if (border.Child is StackPanel sp)
+            if (sender is MenuItem mi && mi.Parent is ContextMenu cm &&
+                cm.PlacementTarget is FrameworkElement fe)
             {
-                foreach (var child in sp.Children)
-                {
-                    if (child is TextBlock t) return t.Text;
-                    if (child is Border b && b.Child is TextBlock t2) return t2.Text;
-                }
+                return fe.DataContext as ChatMessageData;
             }
-            return string.Empty;
+            return null;
+        }
+
+        /// <summary>
+        /// Tên người gửi gốc dùng cho Reply/Forward. Luôn dùng DisplayName thật (kể cả tin của chính mình)
+        /// vì tên này được gửi sang người nhận, nên không được dùng nhãn cục bộ như "Bạn".
+        /// </summary>
+        private static string GetDisplaySender(ChatMessageData msg)
+        {
+            return string.IsNullOrWhiteSpace(msg.Sender?.DisplayName) ? "Người dùng" : msg.Sender.DisplayName;
         }
 
         // Đã xóa AppendSentMessageToUi và AppendReceivedMessageToUi vì đã dùng Data Binding MVVM

@@ -27,13 +27,27 @@ namespace ChatTCP.Client.ViewModels
     ///   await vm.SendMessageAsync("Xin chào");
     ///   await vm.SendReplyAsync(messageId, "Nội dung trả lời");
     /// </summary>
-    public class ChatViewModel
+    public class ChatViewModel : IDisposable
     {
         private readonly ClientSocketService? _socketService;
         private readonly Dispatcher? _dispatcher;
         private const int MaxCachedMessages = 500;
         private const int HistoryPageSize = 20;
         private bool _isLoadingHistory = false;
+        private bool _disposed;
+
+        /// <summary>
+        /// UserId của người đang chat cùng trong khung này. Nếu được gán, chỉ tin nhắn PRIVATE
+        /// do đúng người này gửi tới mới hiển thị; tin của người khác không lọt vào khung chat.
+        /// (Tin BROADCAST luôn hiển thị vì gửi tới tất cả.)
+        /// </summary>
+        public string? TargetUserId { get; set; }
+
+        /// <summary>
+        /// Bắn (trên luồng UI) khi gửi tin thất bại, để View báo cho người dùng biết
+        /// thay vì chỉ ghi ra Console.
+        /// </summary>
+        public event Action<string>? SendFailed;
 
         /// <summary>
         /// Bộ sưu tập có thể quan sát các tin nhắn hiển thị trong giao diện chat.
@@ -70,186 +84,105 @@ namespace ChatTCP.Client.ViewModels
             if (_socketService != null)
             {
                 _socketService.OnChatMessageReceived += HandleChatMessageReceived;
+                _socketService.OnBroadcastReceived += HandleBroadcastReceived;
             }
         }
 
         /// <summary>
         /// Gửi một tin nhắn chat thông thường tới một người nhận cụ thể.
-        /// Tin nhắn sẽ được đóng gói trong một đối tượng Packet với Type là "CHAT_MSG" và gửi qua socket.
-        /// 
-        /// Giao thức: Packet&lt;ChatMessageData&gt;
-        ///   - Type: "CHAT_MSG"
-        ///   - Data chứa: MsgId, TargetType, TargetId, Sender, Content
+        /// Tin nhắn được đóng gói trong Packet với Type là "CHAT_MSG" và gửi qua socket.
         /// </summary>
         /// <param name="targetId">ID của người nhận hoặc ID của nhóm</param>
         /// <param name="content">Nội dung tin nhắn</param>
         /// <param name="targetType">Loại đối tượng nhận tin (PRIVATE, GROUP, BROADCAST)</param>
-        /// <returns>Task hoàn thành khi tin nhắn được gửi tới server</returns>
-        public async Task SendMessageAsync(string targetId, string content, string targetType = "PRIVATE")
+        public Task SendMessageAsync(string targetId, string content, string targetType = "PRIVATE")
+            => SendCoreAsync(BuildMessage(targetId, content, targetType));
+
+        /// <summary>
+        /// Gửi một tin nhắn dạng trả lời (reply). Thuộc tính ReplyTo mang MsgId của tin gốc
+        /// (để server đối chiếu), tên người gửi gốc và đoạn trích nội dung gốc.
+        /// </summary>
+        /// <param name="targetId">ID người nhận</param>
+        /// <param name="replyToMsgId">MsgId THẬT của tin nhắn đang được trả lời</param>
+        /// <param name="replySenderName">Tên người gửi của tin nhắn gốc</param>
+        /// <param name="replySnippet">Đoạn trích ngắn từ tin nhắn gốc</param>
+        /// <param name="content">Nội dung câu trả lời</param>
+        public Task SendReplyAsync(string targetId, string replyToMsgId, string replySenderName, string replySnippet, string content)
         {
-            if (string.IsNullOrWhiteSpace(content)) return;
+            var data = BuildMessage(targetId, content);
+            data.ReplyTo = new ReplyInfo
+            {
+                MsgId = replyToMsgId,
+                SenderName = replySenderName,
+                ContentSnippet = replySnippet
+            };
+            return SendCoreAsync(data);
+        }
+
+        /// <summary>
+        /// Gửi một tin nhắn chuyển tiếp (forward) tới người nhận mới.
+        /// IsForwarded = true và ForwardFromName là tên người gửi gốc.
+        /// </summary>
+        public Task SendForwardAsync(string targetId, string originalContent, string forwardFromName)
+        {
+            var data = BuildMessage(targetId, originalContent);
+            data.IsForwarded = true;
+            data.ForwardFromName = forwardFromName;
+            return SendCoreAsync(data);
+        }
+
+        /// <summary>
+        /// Gửi một tin nhắn phát thanh (broadcast) tới toàn bộ người dùng đang kết nối.
+        /// TargetType = "BROADCAST" và TargetId = "*".
+        /// </summary>
+        public Task SendBroadcastAsync(string content)
+            => SendCoreAsync(BuildMessage("*", content, "BROADCAST"));
+
+        /// <summary>
+        /// Tạo ChatMessageData chuẩn cho mọi loại tin gửi đi (dùng chung cho Send/Reply/Forward/Broadcast).
+        /// </summary>
+        private ChatMessageData BuildMessage(string targetId, string content, string targetType = "PRIVATE")
+        {
+            return new ChatMessageData
+            {
+                MsgId = Guid.NewGuid().ToString("N"),
+                Content = content,
+                TargetType = targetType,
+                TargetId = targetId,
+                Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
+                IsMine = true,
+                LocalTime = DateTime.Now
+            };
+        }
+
+        /// <summary>
+        /// Đường gửi chung: kiểm tra đầu vào + kết nối, gửi qua socket (async, không chặn UI),
+        /// chỉ thêm vào danh sách hiển thị khi gửi thành công; nếu lỗi thì bắn SendFailed.
+        /// </summary>
+        private async Task SendCoreAsync(ChatMessageData data)
+        {
+            if (string.IsNullOrWhiteSpace(data.Content)) return;
+
             if (_socketService == null || !_socketService.IsConnected)
             {
-                InvokeOnUI(() =>
-                {
-                    var msg = new ChatMessageData
-                    {
-                        MsgId = Guid.NewGuid().ToString("N"),
-                        Content = content,
-                        TargetType = targetType,
-                        TargetId = targetId,
-                        Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
-                        IsMine = true,
-                        LocalTime = DateTime.Now
-                    };
-                    Messages.Add(msg);
-                });
+                RaiseSendFailed("Chưa kết nối tới server, tin nhắn chưa được gửi.");
                 return;
             }
 
             try
             {
-                var data = new ChatMessageData
-                {
-                    MsgId = Guid.NewGuid().ToString("N"),
-                    Content = content,
-                    TargetType = targetType,
-                    TargetId = targetId,
-                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
-                    IsMine = true,
-                    LocalTime = DateTime.Now
-                };
-
                 await _socketService.SendChatMessageAsync(data);
-
-                // Optionally add to local cache immediately for optimistic UI
                 InvokeOnUI(() => Messages.Add(data));
             }
             catch (Exception ex)
             {
-                InvokeOnUI(() =>
-                {
-                    // Could raise an error event here
-                    Console.WriteLine($"Send error: {ex.Message}");
-                });
+                RaiseSendFailed(ex.Message);
             }
         }
 
-        /// <summary>
-        /// Gửi một tin nhắn dạng trả lời (reply) tới một tin nhắn cụ thể trước đó.
-        /// Tin nhắn reply sẽ chứa thông tin tham chiếu tới tin nhắn gốc thông qua thuộc tính ReplyInfo.
-        /// 
-        /// Giao thức: Tương tự SendMessageAsync, nhưng thuộc tính Data.ReplyTo sẽ được điền thông tin
-        ///   - ReplyInfo chứa: MsgId (của tin gốc), SenderName (tên người gửi gốc), ContentSnippet (trích dẫn nội dung gốc)
-        /// </summary>
-        /// <param name="targetId">ID người nhận</param>
-        /// <param name="replyToMsgId">ID của tin nhắn đang được trả lời</param>
-        /// <param name="replySenderName">Tên người gửi của tin nhắn gốc</param>
-        /// <param name="replySnippet">Đoạn trích dẫn ngắn từ tin nhắn gốc</param>
-        /// <param name="content">Nội dung câu trả lời</param>
-        public async Task SendReplyAsync(string targetId, string replyToMsgId, string replySenderName, string replySnippet, string content)
+        private void RaiseSendFailed(string message)
         {
-            if (string.IsNullOrWhiteSpace(content)) return;
-            if (_socketService == null || !_socketService.IsConnected) return;
-
-            try
-            {
-                var data = new ChatMessageData
-                {
-                    MsgId = Guid.NewGuid().ToString("N"),
-                    Content = content,
-                    TargetType = "PRIVATE",
-                    TargetId = targetId,
-                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
-                    ReplyTo = new ReplyInfo
-                    {
-                        MsgId = replyToMsgId,
-                        SenderName = replySenderName,
-                        ContentSnippet = replySnippet
-                    },
-                    IsMine = true,
-                    LocalTime = DateTime.Now
-                };
-
-                await _socketService.SendChatMessageAsync(data);
-                InvokeOnUI(() => Messages.Add(data));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Send reply error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Gửi một tin nhắn được chuyển tiếp (forward) tới một người nhận mới.
-        /// Cờ IsForwarded sẽ được bật để hiển thị đây là tin nhắn chuyển tiếp.
-        /// 
-        /// Giao thức: Tương tự SendMessageAsync, nhưng có IsForwarded = true và ForwardFromName được gán
-        /// </summary>
-        /// <param name="targetId">ID người nhận mới</param>
-        /// <param name="originalContent">Nội dung của tin nhắn đang được chuyển tiếp</param>
-        /// <param name="forwardFromName">Tên của người gửi gốc của tin nhắn</param>
-        public async Task SendForwardAsync(string targetId, string originalContent, string forwardFromName)
-        {
-            if (string.IsNullOrWhiteSpace(originalContent)) return;
-            if (_socketService == null || !_socketService.IsConnected) return;
-
-            try
-            {
-                var data = new ChatMessageData
-                {
-                    MsgId = Guid.NewGuid().ToString("N"),
-                    Content = originalContent,
-                    TargetType = "PRIVATE",
-                    TargetId = targetId,
-                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
-                    IsForwarded = true,
-                    ForwardFromName = forwardFromName,
-                    IsMine = true,
-                    LocalTime = DateTime.Now
-                };
-
-                await _socketService.SendChatMessageAsync(data);
-                InvokeOnUI(() => Messages.Add(data));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Send forward error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Gửi một tin nhắn phát thanh (broadcast) tới toàn bộ người dùng đang kết nối.
-        /// Đặt TargetType thành BROADCAST để server tự phân phối tin nhắn này.
-        /// 
-        /// Giao thức: Giống cấu trúc CHAT_MSG, nhưng TargetType = "BROADCAST" và TargetId = "*"
-        /// </summary>
-        /// <param name="content">Nội dung tin nhắn phát thanh</param>
-        public async Task SendBroadcastAsync(string content)
-        {
-            if (string.IsNullOrWhiteSpace(content)) return;
-            if (_socketService == null || !_socketService.IsConnected) return;
-
-            try
-            {
-                var data = new ChatMessageData
-                {
-                    MsgId = Guid.NewGuid().ToString("N"),
-                    Content = content,
-                    TargetType = "BROADCAST",
-                    TargetId = "*", // Special marker for broadcast
-                    Sender = CurrentUser ?? new SenderInfo { DisplayName = "Me" },
-                    IsMine = true,
-                    LocalTime = DateTime.Now
-                };
-
-                await _socketService.SendChatMessageAsync(data);
-                InvokeOnUI(() => Messages.Add(data));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Send broadcast error: {ex.Message}");
-            }
+            InvokeOnUI(() => SendFailed?.Invoke(message));
         }
 
         /// <summary>
@@ -329,22 +262,44 @@ namespace ChatTCP.Client.ViewModels
         }
 
         /// <summary>
-        /// Xử lý tin nhắn chat tiếp nhận từ socket service.
-        /// Thêm các tin nhắn nhận được vào bộ sưu tập Messages trên luồng UI.
+        /// Xử lý tin chat nhận từ socket service. Chỉ nhận tin PRIVATE do đúng người đang chat cùng
+        /// gửi tới (khi TargetUserId đã được gán) để tin của người khác không lọt vào khung này.
         /// </summary>
         private void HandleChatMessageReceived(Packet<ChatMessageData> packet)
         {
             if (packet?.Data == null) return;
 
+            if (!string.IsNullOrEmpty(TargetUserId) &&
+                packet.Data.Sender?.UserId != TargetUserId)
+            {
+                return;
+            }
+
+            AddIncoming(packet);
+        }
+
+        /// <summary>
+        /// Xử lý tin BROADCAST nhận từ socket service; hiển thị trong khung chat đang mở.
+        /// </summary>
+        private void HandleBroadcastReceived(Packet<ChatMessageData> packet)
+        {
+            if (packet?.Data == null) return;
+
+            // Bỏ qua bản sao tin do chính mình phát (nếu server gửi ngược lại cho người gửi)
+            if (packet.Data.Sender?.UserId == CurrentUser?.UserId) return;
+
+            packet.Data.TargetType = "BROADCAST";
+            AddIncoming(packet);
+        }
+
+        private void AddIncoming(Packet<ChatMessageData> packet)
+        {
             packet.Data.IsMine = false;
             packet.Data.LocalTime = packet.Timestamp > 0
                 ? DateTimeOffset.FromUnixTimeSeconds(packet.Timestamp).LocalDateTime
                 : DateTime.Now;
 
-            InvokeOnUI(() =>
-            {
-                Messages.Add(packet.Data);
-            });
+            InvokeOnUI(() => Messages.Add(packet.Data));
         }
 
         /// <summary>
@@ -376,9 +331,13 @@ namespace ChatTCP.Client.ViewModels
         /// </summary>
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
+
             if (_socketService != null)
             {
                 _socketService.OnChatMessageReceived -= HandleChatMessageReceived;
+                _socketService.OnBroadcastReceived -= HandleBroadcastReceived;
             }
             Messages.Clear();
         }

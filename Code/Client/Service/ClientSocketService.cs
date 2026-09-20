@@ -259,6 +259,13 @@ namespace ChatTCP.Client.Networking
 
             await SendPacketAsync(packet);
 
+            // SendPacketAsync tự nuốt lỗi và gọi Disconnect(); nếu đã mất kết nối thì báo lỗi lên
+            // cho ViewModel để KHÔNG hiển thị/ghi nhận một tin nhắn thực ra chưa gửi được.
+            if (!IsConnected)
+            {
+                throw new InvalidOperationException("Gửi thất bại: mất kết nối tới server.");
+            }
+
             // Ghi nhận ngay vào ConversationStore để danh sách chat cập nhật preview + giờ
             // real-time, bất kể ContactListView có đang hiển thị hay không lúc này.
             ConversationStore.Instance.RecordOutgoing(data.TargetId, data.Content, DateTime.Now);
@@ -522,13 +529,6 @@ namespace ChatTCP.Client.Networking
             {
                 // Không có Dispatcher, thực thi trên threadpool
                 try { Task.Run(action); } catch { }
-                try
-                {
-                    Task.Run(action);
-                }
-                catch
-                {
-                }
             }
         }
 
