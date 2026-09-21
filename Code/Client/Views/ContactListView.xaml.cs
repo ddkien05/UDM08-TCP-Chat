@@ -581,13 +581,21 @@ namespace ChatTCP.Client.Views
     /// </summary>
     public class ChatItem : INotifyPropertyChanged
     {
-        private string _name = string.Empty;
-        public string Name
+       
+
+        private System.Windows.Media.ImageSource? _avatarPath;
+        public System.Windows.Media.ImageSource? AvatarPath
         {
-            get => _name;
-            set => SetField(ref _name, value);
+            get => _avatarPath;
+            set
+            {
+                if (SetField(ref _avatarPath, value))
+                    OnPropertyChanged(nameof(HasAvatar));
+            }
         }
-        public System.Windows.Media.ImageSource? AvatarPath { get; set; }
+
+        /// <summary>True khi người này đã có ảnh đại diện.</summary>
+        public bool HasAvatar => AvatarPath != null;
 
         private string _username = string.Empty;
         public string Username
@@ -610,6 +618,28 @@ namespace ChatTCP.Client.Views
 
         private bool _isOnline;
         /// <summary>Trạng thái online thật (dùng để tô màu chấm trạng thái trong danh sách).</summary>
+
+        private string _name = string.Empty;
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (SetField(ref _name, value))
+                    OnPropertyChanged(nameof(Initial));
+            }
+        }
+
+        /// <summary>Chữ cái đầu của tên hiển thị (viết hoa), dùng khi người dùng chưa có avatar.</summary>
+        public string Initial
+        {
+            get
+            {
+                string trimmed = (Name ?? string.Empty).Trim();
+                if (trimmed.Length == 0) return "?";
+                return System.Globalization.StringInfo.GetNextTextElement(trimmed).ToUpper();
+            }
+        }
         public bool IsOnline
         {
             get => _isOnline;

@@ -107,7 +107,9 @@ namespace ChatTCP.Client.Networking
                 Disconnect();
 
                 _client = new TcpClient();
-                await _client.ConnectAsync(host, port);
+          
+                await _client.ConnectAsync(host, port).WaitAsync(TimeSpan.FromSeconds(5));
+
                 _stream = _client.GetStream();
 
                 // Gửi yêu cầu đăng nhập
@@ -120,7 +122,7 @@ namespace ChatTCP.Client.Networking
                 await MessageProtocol.SendPacketAsync(_stream, loginPacket);
 
                 // Đợi phản hồi
-                string? rawRes = await MessageProtocol.ReceiveRawJsonAsync(_stream);
+                string? rawRes = await MessageProtocol.ReceiveRawJsonAsync(_stream).WaitAsync(TimeSpan.FromSeconds(5));
                 if (string.IsNullOrEmpty(rawRes))
                 {
                     throw new Exception("Không nhận được phản hồi từ Server.");
@@ -163,12 +165,25 @@ namespace ChatTCP.Client.Networking
 
                 return true;
             }
+            catch (TimeoutException)
+            {
+                Disconnect();
+                RaiseError("Server không phản hồi (quá thời gian chờ). Hãy kiểm tra lại IP và Port.");
+                return false;
+            }
+            catch (SocketException)
+            {
+                Disconnect();
+                RaiseError("Không kết nối được tới Server. Hãy kiểm tra Server đã chạy chưa và IP/Port có đúng không.");
+                return false;
+            }
             catch (Exception ex)
             {
                 Disconnect();
                 RaiseError(ex.Message);
                 return false;
             }
+      
         }
 
         /// <summary>

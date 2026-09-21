@@ -18,11 +18,10 @@ namespace ChatTCP.Client.Views
 
             _socketService =
                 new ClientSocketService(Dispatcher);
+            _socketService.OnError += ShowError;
         }
 
-        private async void LoginButton_Click(
-            object sender,
-            RoutedEventArgs e)
+        private async void LoginButton_Click(object sender, RoutedEventArgs e)
         {
             string username = UsernameTextBox.Text.Trim();
             string password = PasswordBox.Password;
@@ -53,25 +52,35 @@ namespace ChatTCP.Client.Views
 
             ErrorText.Visibility = Visibility.Collapsed;
 
+            // Khóa nút + báo đang xử lý để người dùng biết app không bị đơ
+            var loginButton = sender as Button;
+            if (loginButton != null)
+            {
+                loginButton.IsEnabled = false;
+                loginButton.Content = "Đang đăng nhập...";
+            }
+
             try
             {
                 bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
 
                 if (!loginSuccess)
                 {
-                    // Lỗi đã được phát qua sự kiện OnError của ClientSocketService
+                    // Thông báo lỗi đã được hiện qua OnError -> ShowError
                     return;
                 }
 
+                // Đăng nhập xong thì thôi nhận lỗi ở màn hình này
+                _socketService.OnError -= ShowError;
                 LoginSucceeded?.Invoke(_socketService);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                ShowError(ex.Message);
             }
             finally
             {
-                if (sender is Button loginButton)
+                if (loginButton != null)
                 {
                     loginButton.IsEnabled = true;
                     loginButton.Content = "Đăng nhập";

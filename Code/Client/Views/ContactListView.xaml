@@ -352,6 +352,30 @@
                                           VerticalAlignment="Center">
 
                                         <Ellipse Fill="#DCEEFF"/>
+                                        <Ellipse Fill="#DCEEFF"/>
+
+                                        <TextBlock Text="{Binding Initial}"
+           FontSize="20"
+           FontWeight="Bold"
+           Foreground="#0A84FF"
+           HorizontalAlignment="Center"
+           VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasAvatar}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <Ellipse>
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding AvatarPath}" Stretch="UniformToFill"/>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
 
                                         <Ellipse>
 
