@@ -107,7 +107,33 @@
                 <ItemsControl x:Name="MessageList" ItemsSource="{Binding Messages}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="0,4,0,8">
+                            <DataTemplate.Resources>
+                                <Style x:Key="MsgActionButton" TargetType="Button">
+                                    <Setter Property="Width" Value="26"/>
+                                    <Setter Property="Height" Value="26"/>
+                                    <Setter Property="Margin" Value="2,0"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="FontFamily" Value="Segoe UI Symbol"/>
+                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="Foreground" Value="#6B7280"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Bd" CornerRadius="13" Background="#F3F4F6">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="#E5E7EB"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataTemplate.Resources>
+                            <StackPanel x:Name="MsgRoot" Margin="0,4,0,8" Background="Transparent">
                                 <Border x:Name="MsgBorder"
                                     CornerRadius="12"
                                     Padding="12,8"
@@ -130,8 +156,12 @@
                                             Padding="8,4"
                                             Margin="0,0,0,6">
                                             <TextBlock x:Name="ReplyContextText"
-                                                   Style="{StaticResource Caption}"
-                                                   TextWrapping="Wrap"/>
+           Style="{StaticResource Caption}"
+           TextWrapping="Wrap">
+    <Run Text="{Binding ReplyTo.SenderName, Mode=OneWay}" FontWeight="SemiBold"/>
+    <LineBreak/>
+    <Run Text="{Binding ReplyTo.ContentSnippet, Mode=OneWay}"/>
+                                            </TextBlock>
                                         </Border>
 
                                         <!-- Bối cảnh tin nhắn chuyển tiếp (Forward Context) -->
@@ -156,11 +186,32 @@
                                                Style="{StaticResource BodyRegular}"/>
                                     </StackPanel>
                                 </Border>
-                                <TextBlock x:Name="TimeText"
-                                       Text="{Binding LocalTime, StringFormat='HH:mm'}"
-                                       Style="{StaticResource Caption}"
-                                       HorizontalAlignment="Left"
-                                       Margin="4,4,4,0"/>
+                                <StackPanel x:Name="MetaRow"
+            Orientation="Horizontal"
+            HorizontalAlignment="Left"
+            Margin="4,4,4,0">
+
+                                    <TextBlock x:Name="TimeText"
+               Text="{Binding LocalTime, StringFormat='HH:mm'}"
+               Style="{StaticResource Caption}"
+               VerticalAlignment="Center"/>
+
+                                    <StackPanel x:Name="ActionButtons"
+                Orientation="Horizontal"
+                Margin="8,0,0,0"
+                Opacity="0.45">
+
+                                        <Button Style="{StaticResource MsgActionButton}"
+                Content="↩"
+                ToolTip="Trả lời"
+                Click="ReplyMenu_Click"/>
+
+                                        <Button Style="{StaticResource MsgActionButton}"
+                Content="↪"
+                ToolTip="Chuyển tiếp"
+                Click="ForwardMenu_Click"/>
+                                    </StackPanel>
+                                </StackPanel>
                             </StackPanel>
 
                             <DataTemplate.Triggers>
@@ -168,15 +219,20 @@
                                     <Setter TargetName="MsgBorder" Property="HorizontalAlignment" Value="Right"/>
                                     <Setter TargetName="MsgBorder" Property="Background" Value="{StaticResource PrimaryBrush}"/>
                                     <Setter TargetName="MsgText" Property="Foreground" Value="{StaticResource TextOnPrimaryBrush}"/>
-                                    <Setter TargetName="TimeText" Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter TargetName="MetaRow" Property="HorizontalAlignment" Value="Right"/>
                                 </DataTrigger>
+
                                 <DataTrigger Binding="{Binding IsForwarded}" Value="True">
                                     <Setter TargetName="ForwardContextBorder" Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
-                                <!-- Chúng ta có thể dùng trigger để kiểm tra xem tin nhắn có thuộc loại ReplyTo hay không.
-                                 Tuy nhiên, do Trigger cơ bản trong WPF khó bắt trường hợp khác NULL, 
-                                 nên tốt nhất là ViewModel cung cấp thêm thuộc tính HasReply để Bind thẳng vào Visibility. 
-                                 Hiện tại, giữ logic đơn giản ở đây. -->
+
+                                <DataTrigger Binding="{Binding HasReply}" Value="True">
+                                    <Setter TargetName="ReplyContextBorder" Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+
+                                <Trigger SourceName="MsgRoot" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ActionButtons" Property="Opacity" Value="1"/>
+                                </Trigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

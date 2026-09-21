@@ -347,11 +347,19 @@ namespace ChatTCP.Client.Views
         /// </summary>
         private static ChatMessageData? GetSelectedMessage(object sender)
         {
+            // Bấm từ menu chuột phải
             if (sender is MenuItem mi && mi.Parent is ContextMenu cm &&
                 cm.PlacementTarget is FrameworkElement fe)
             {
                 return fe.DataContext as ChatMessageData;
             }
+
+            // Bấm từ icon ngay cạnh bong bóng chat (DataContext của nút chính là tin nhắn)
+            if (sender is FrameworkElement el)
+            {
+                return el.DataContext as ChatMessageData;
+            }
+
             return null;
         }
 
