@@ -111,15 +111,26 @@
 
                 </StackPanel>
 
-                <Button Grid.Row="2"
-                        Width="50"
-                        Height="50"
-                        BorderThickness="0"
-                        Background="Transparent">
+                <Button x:Name="SettingsButton"
+        Grid.Row="2"
+        Width="50"
+        Height="50"
+        BorderThickness="0"
+        Background="Transparent"
+        Cursor="Hand"
+        ToolTip="Cài đặt"
+        Click="SettingsButton_Click">
+
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Đăng xuất"
+                      Click="LogoutMenuItem_Click"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
 
                     <TextBlock Text="⚙"
-                               FontSize="24"
-                               Foreground="White"/>
+               FontSize="24"
+               Foreground="White"/>
 
                 </Button>
 

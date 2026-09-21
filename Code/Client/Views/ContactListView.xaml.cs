@@ -28,10 +28,26 @@ namespace ChatTCP.Client.Views
         /// (targetUserId, targetDisplayName, isOnline)
         /// </summary>
         public event Action<string, string, bool, System.Windows.Media.ImageSource?>? ChatSelected;
+        /// <summary>Bắn khi người dùng chọn "Đăng xuất" từ menu bánh răng.</summary>
+        public event Action? LogoutRequested;
         public ContactListView() : this(null)
         {
         }
 
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SettingsButton.ContextMenu is { } menu)
+            {
+                menu.PlacementTarget = SettingsButton;
+                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Right;
+                menu.IsOpen = true;
+            }
+        }
+
+        private void LogoutMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            LogoutRequested?.Invoke();
+        }
         public ContactListView(ClientSocketService? socketService)
         {
             _socketService = socketService;

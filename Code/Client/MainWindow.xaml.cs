@@ -1,5 +1,6 @@
 ﻿using ChatTCP.Client.Networking;
 using ChatTCP.Client.Views;
+using System.Drawing.Interop;
 using System.Windows;
 
 namespace Client
@@ -41,9 +42,21 @@ namespace Client
 
             var contactList = new ContactListView(_socketService);
             contactList.ChatSelected += ShowChatView;
+            contactList.LogoutRequested += Logout;
             MainContent.Content = contactList;
         }
+        private void Logout()
+        {
+            // Đóng kết nối TCP -> server tự gỡ user khỏi danh sách online và báo OFFLINE cho người khác
+            _socketService?.Disconnect();
+            _socketService = null;
 
+            // Xóa dữ liệu hội thoại của phiên cũ để tài khoản đăng nhập kế tiếp không bị lẫn
+            ConversationStore.Instance.Clear();
+            ConversationStore.Instance.ActiveChatUserId = null;
+
+            ShowLogin();
+        }
         public void ShowChatView(string targetUserId, string targetDisplayName, bool isOnline,
                           System.Windows.Media.ImageSource? avatar)
         {
