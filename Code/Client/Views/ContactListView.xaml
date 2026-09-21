@@ -1,0 +1,517 @@
+﻿<UserControl x:Class="ChatTCP.Client.Views.ContactListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="650"
+             d:DesignWidth="950">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Background="#F5F7FA">
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= SIDEBAR ================= -->
+
+        <Border Grid.Column="0"
+                Background="#0A84FF">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="80"/>
+                </Grid.RowDefinitions>
+
+                <!-- AVATAR -->
+                <Button Grid.Row="0"
+                        Width="54"
+                        Height="54"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Cursor="Hand"
+                        ToolTip="Đổi ảnh đại diện"
+                        Click="ChangeAvatarButton_Click">
+
+                    <Grid Width="52"
+                          Height="52">
+
+                        <Ellipse Stroke="#80FFFFFF"
+                                 StrokeThickness="2">
+
+                            <Ellipse.Fill>
+                                <ImageBrush x:Name="MyAvatarBrush"
+                                            Stretch="UniformToFill"/>
+                            </Ellipse.Fill>
+
+                        </Ellipse>
+
+                        <TextBlock x:Name="DefaultAvatarIcon"
+                                   Text="👤"
+                                   FontSize="25"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+
+                        <Border Width="18"
+                                Height="18"
+                                CornerRadius="9"
+                                Background="White"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom">
+
+                            <TextBlock Text="✎"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#0A84FF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+
+                        </Border>
+
+                    </Grid>
+
+                </Button>
+
+                <!-- MENU -->
+                <StackPanel Grid.Row="1"
+                            VerticalAlignment="Top"
+                            Margin="0,20,0,0">
+
+                    <Button Width="50"
+                            Height="50"
+                            Margin="0,5"
+                            BorderThickness="0"
+                            Background="#30FFFFFF">
+
+                        <TextBlock Text="💬"
+                                   FontSize="22"/>
+
+                    </Button>
+
+                    <Button Width="50"
+                            Height="50"
+                            Margin="0,5"
+                            BorderThickness="0"
+                            Background="Transparent">
+
+                      
+
+                    </Button>
+
+                </StackPanel>
+
+                <Button x:Name="SettingsButton"
+        Grid.Row="2"
+        Width="50"
+        Height="50"
+        BorderThickness="0"
+        Background="Transparent"
+        Cursor="Hand"
+        ToolTip="Cài đặt"
+        Click="SettingsButton_Click">
+
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Đăng xuất"
+                      Click="LogoutMenuItem_Click"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+
+                    <TextBlock Text="⚙"
+               FontSize="24"
+               Foreground="White"/>
+
+                </Button>
+
+            </Grid>
+
+        </Border>
+
+        <!-- ================= CONTACT LIST ================= -->
+
+        <Border Grid.Column="1"
+                Background="White"
+                BorderBrush="#E5E7EB"
+                BorderThickness="0,0,1,0" Grid.ColumnSpan="2">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="65"/>
+                    <RowDefinition Height="60"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- HEADER -->
+                <Grid Grid.Row="0"
+                      Margin="18,0">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="45"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Danh sách chat"
+                               FontSize="21"
+                               FontWeight="Bold"
+                               Foreground="#111827"
+                               VerticalAlignment="Center"/>
+
+                </Grid>
+
+                <!-- ================= SEARCH ================= -->
+
+                <Grid Grid.Row="1"
+                      Margin="15,5,15,10">
+
+                    <Border Background="#F3F4F6"
+                            CornerRadius="12">
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="🔍"
+                                       FontSize="14"
+                                       Opacity="0.6"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+
+                            <Grid Grid.Column="1">
+
+                                <TextBox x:Name="SearchTextBox"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         FontSize="14"
+                                         Foreground="#111827"
+                                         Padding="0,0,10,0"
+                                         VerticalContentAlignment="Center"
+                                         TextChanged="SearchTextBox_TextChanged"/>
+
+                                <TextBlock Text="Tìm kiếm..."
+                                           FontSize="14"
+                                           Foreground="#9CA3AF"
+                                           IsHitTestVisible="False"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                            </Grid>
+
+                        </Grid>
+
+                    </Border>
+
+                </Grid>
+
+                <!-- ================= LIST ================= -->
+
+                <Grid Grid.Row="2">
+
+                    <!-- EMPTY STATE -->
+                    <StackPanel x:Name="EmptyPanel"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+
+                        <TextBlock x:Name="EmptyIcon"
+                                   
+                                   FontSize="52"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock x:Name="EmptyMessage"
+                                   Text="Chưa có cuộc trò chuyện"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="#374151"
+                                   Margin="0,12,0,0"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Các cuộc trò chuyện sẽ xuất hiện tại đây"
+                                   FontSize="12"
+                                   Foreground="#9CA3AF"
+                                   Margin="0,5,0,0"
+                                   HorizontalAlignment="Center"/>
+
+                    </StackPanel>
+
+                    <!-- CHAT LIST -->
+                    <ListBox x:Name="ChatList"
+                             Visibility="Collapsed"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             SelectionChanged="ChatList_SelectionChanged">
+
+                        <ListBox.ItemContainerStyle>
+
+                            <Style TargetType="ListBoxItem">
+
+                                <Setter Property="HorizontalContentAlignment"
+                                        Value="Stretch"/>
+
+                                <Setter Property="Padding"
+                                        Value="0"/>
+
+                                <Setter Property="Margin"
+                                        Value="0"/>
+
+                                <Setter Property="BorderThickness"
+                                        Value="0"/>
+
+                                <Setter Property="Background"
+                                        Value="Transparent"/>
+
+                                <Setter Property="Template">
+
+                                    <Setter.Value>
+
+                                        <ControlTemplate TargetType="ListBoxItem">
+
+                                            <Border x:Name="ItemBackground"
+                                                    Background="Transparent"
+                                                    Padding="12,8">
+
+                                                <ContentPresenter/>
+
+                                            </Border>
+
+                                            <ControlTemplate.Triggers>
+
+                                                <Trigger Property="IsMouseOver"
+                                                         Value="True">
+
+                                                    <Setter TargetName="ItemBackground"
+                                                            Property="Background"
+                                                            Value="#F3F4F6"/>
+
+                                                </Trigger>
+
+                                                <Trigger Property="IsSelected"
+                                                         Value="True">
+
+                                                    <Setter TargetName="ItemBackground"
+                                                            Property="Background"
+                                                            Value="#E8F3FF"/>
+
+                                                </Trigger>
+
+                                            </ControlTemplate.Triggers>
+
+                                        </ControlTemplate>
+
+                                    </Setter.Value>
+
+                                </Setter>
+
+                            </Style>
+
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBox.ItemTemplate>
+
+                            <DataTemplate>
+
+                                <Grid Height="60">
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="60"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- AVATAR CONTACT -->
+                                    <Grid Grid.Column="0"
+                                          Width="46"
+                                          Height="46"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center">
+
+                                        <Ellipse Fill="#DCEEFF"/>
+                                        <Ellipse Fill="#DCEEFF"/>
+
+                                        <TextBlock Text="{Binding Initial}"
+           FontSize="20"
+           FontWeight="Bold"
+           Foreground="#0A84FF"
+           HorizontalAlignment="Center"
+           VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasAvatar}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <Ellipse>
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding AvatarPath}" Stretch="UniformToFill"/>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+
+                                        <Ellipse>
+
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding AvatarPath}"
+                                                            Stretch="UniformToFill"/>
+                                            </Ellipse.Fill>
+
+                                        </Ellipse>
+                                        <Ellipse x:Name="StatusDot"
+         Width="12"
+         Height="12"
+         Stroke="White"
+         StrokeThickness="2"
+         HorizontalAlignment="Right"
+         VerticalAlignment="Bottom">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="#9CA3AF"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                                            <Setter Property="Fill" Value="{StaticResource OnlineStatus}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+
+                                    </Grid>
+
+                                    <!-- INFO -->
+                                    <StackPanel Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Margin="3,0,5,0">
+
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="15"
+                                                   Foreground="#111827"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <TextBlock Text="{Binding Username, StringFormat=@{0}}"
+                                                   FontSize="11"
+                                                   Foreground="#9CA3AF"
+                                                   Margin="0,1,0,0"
+                                                   TextTrimming="CharacterEllipsis"/>
+
+                                        <!-- Preview tin nhắn gần nhất, kiểu Messenger: đậm + đen khi chưa đọc -->
+                                        <TextBlock x:Name="LastMessageText"
+                                                   Text="{Binding LastMessage}"
+                                                   FontSize="12"
+                                                   Foreground="#6B7280"
+                                                   Margin="0,2,0,0"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                                            <Setter Property="Foreground" Value="#111827"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                    </StackPanel>
+
+                                    <!-- GIỜ + BADGE THÔNG BÁO CHƯA ĐỌC -->
+                                    <StackPanel Grid.Column="2"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Margin="0,8,2,0">
+
+                                        <TextBlock Text="{Binding Time}"
+                                                   FontSize="11"
+                                                   HorizontalAlignment="Right">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <!-- Badge tròn số tin chưa đọc, giống chấm thông báo của Messenger -->
+                                        <Border Margin="0,6,0,0"
+                                                MinWidth="18"
+                                                Height="18"
+                                                CornerRadius="9"
+                                                Padding="5,0"
+                                                Background="{StaticResource PrimaryBrush}"
+                                                HorizontalAlignment="Right"
+                                                Visibility="{Binding HasUnread, Converter={StaticResource BoolToVis}}">
+
+                                            <TextBlock Text="{Binding UnreadCount}"
+                                                       FontSize="10"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                        </Border>
+
+                                    </StackPanel>
+
+                                </Grid>
+
+                            </DataTemplate>
+
+                        </ListBox.ItemTemplate>
+
+                    </ListBox>
+
+                </Grid>
+
+            </Grid>
+
+        </Border>
+
+
+
+    </Grid>
+
+</UserControl>

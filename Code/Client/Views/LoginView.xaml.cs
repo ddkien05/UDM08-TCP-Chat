@@ -1,0 +1,103 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using ChatTCP.Client.Networking;
+
+namespace ChatTCP.Client.Views
+{
+    public partial class LoginView : UserControl
+    {
+        private readonly ClientSocketService _socketService;
+
+        public event Action<ClientSocketService>? LoginSucceeded;
+        public event Action? RegisterRequested;
+
+        public LoginView()
+        {
+            InitializeComponent();
+
+            _socketService =
+                new ClientSocketService(Dispatcher);
+            _socketService.OnError += ShowError;
+        }
+
+        private async void LoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            string username = UsernameTextBox.Text.Trim();
+            string password = PasswordBox.Password;
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                ShowError("Vui lòng nhập tên đăng nhập.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                ShowError("Vui lòng nhập mật khẩu.");
+                return;
+            }
+
+            string serverIp = ServerIpTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(serverIp))
+            {
+                serverIp = "127.0.0.1";
+            }
+
+            if (!int.TryParse(PortTextBox.Text.Trim(), out int port))
+            {
+                ShowError("Cổng (Port) không hợp lệ. Vui lòng nhập số.");
+                return;
+            }
+
+            ErrorText.Visibility = Visibility.Collapsed;
+
+            // Khóa nút + báo đang xử lý để người dùng biết app không bị đơ
+            var loginButton = sender as Button;
+            if (loginButton != null)
+            {
+                loginButton.IsEnabled = false;
+                loginButton.Content = "Đang đăng nhập...";
+            }
+
+            try
+            {
+                bool loginSuccess = await _socketService.LoginAsync(serverIp, port, username, password);
+
+                if (!loginSuccess)
+                {
+                    // Thông báo lỗi đã được hiện qua OnError -> ShowError
+                    return;
+                }
+
+                // Đăng nhập xong thì thôi nhận lỗi ở màn hình này
+                _socketService.OnError -= ShowError;
+                LoginSucceeded?.Invoke(_socketService);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex.Message);
+            }
+            finally
+            {
+                if (loginButton != null)
+                {
+                    loginButton.IsEnabled = true;
+                    loginButton.Content = "Đăng nhập";
+                }
+            }
+        }
+
+        private void RegisterNavButton_Click(object sender, RoutedEventArgs e)
+        {
+            RegisterRequested?.Invoke();
+        }
+
+
+        private void ShowError(string message)
+        {
+            ErrorText.Text = message;
+            ErrorText.Visibility = Visibility.Visible;
+        }
+    }
+}
