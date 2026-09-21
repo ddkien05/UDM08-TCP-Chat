@@ -204,11 +204,16 @@ namespace ChatTCP.Client.Views
         private void HandleUserStatusChanged(ChatTCP.Common.Models.Packet<ChatTCP.Common.Models.UserStatusNotifyData> packet)
         {
             var chat = Chats.FirstOrDefault(c => c.UserId == packet.Data.UserId);
-            if (chat == null) return;
+
+            if (chat == null)
+            {
+                // User mới (vừa đăng ký) chưa có trong danh sách -> nạp lại từ server
+                _ = _socketService?.RequestUserListAsync();
+                return;
+            }
 
             chat.IsOnline = packet.Data.Status == "ONLINE";
         }
-
         // =====================================================
         // DỮ LIỆU MẪU
         // =====================================================

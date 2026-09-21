@@ -350,17 +350,16 @@
                                             </Ellipse.Fill>
 
                                         </Ellipse>
-
                                         <Ellipse x:Name="StatusDot"
-                                                 Width="12"
-                                                 Height="12"
-                                                 Fill="#9CA3AF"
-                                                 Stroke="White"
-                                                 StrokeThickness="2"
-                                                 HorizontalAlignment="Right"
-                                                 VerticalAlignment="Bottom">
+         Width="12"
+         Height="12"
+         Stroke="White"
+         StrokeThickness="2"
+         HorizontalAlignment="Right"
+         VerticalAlignment="Bottom">
                                             <Ellipse.Style>
                                                 <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="#9CA3AF"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsOnline}" Value="True">
                                                             <Setter Property="Fill" Value="{StaticResource OnlineStatus}"/>

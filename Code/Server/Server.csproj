@@ -1,16 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <None Remove="Data\Schema.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\Schema.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- SQL schema files intentionally excluded from build-time validation to avoid SSDT parsing errors. They will be loaded at runtime by DbConnectionFactory if present in output. -->
   </ItemGroup>
 
   <PropertyGroup>
