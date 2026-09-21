@@ -104,8 +104,7 @@
                             BorderThickness="0"
                             Background="Transparent">
 
-                        <TextBlock Text="👥"
-                                   FontSize="22"/>
+                      
 
                     </Button>
 

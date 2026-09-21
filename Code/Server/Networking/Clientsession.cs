@@ -14,7 +14,6 @@ namespace ChatTCP.Server.Networking
         public string Username { get; set; }
         public string DisplayName { get; set; }
 
-        /// <summary>
         /// Khóa ghi (write lock) riêng cho stream của session này.
         /// QUAN TRỌNG: NetworkStream không an toàn khi bị ghi đồng thời từ nhiều luồng
         /// (ví dụ: luồng của chính client này tự gửi USER_LIST, VÀ CÙNG LÚC luồng của
@@ -22,7 +21,7 @@ namespace ChatTCP.Server.Networking
         /// Ghi chồng chéo sẽ làm hỏng khung tin (length-prefix), khiến phía nhận đọc lỗi
         /// và bị ngắt kết nối đột ngột. Mọi nơi ghi vào TcpClient.GetStream() của session này
         /// đều phải WaitAsync()/Release() qua khóa này trước.
-        /// </summary>
+   
         public SemaphoreSlim WriteLock { get; } = new SemaphoreSlim(1, 1);
     }
 }

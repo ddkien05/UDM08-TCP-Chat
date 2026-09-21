@@ -138,15 +138,13 @@ namespace ChatTCP.Server.Services
             }
         }
 
-        // =====================================================
+    
         // THÔNG BÁO ONLINE/OFFLINE REAL-TIME (USER_STATUS_NOTIFY)
-        // =====================================================
 
-        /// <summary>
         /// Đóng gói và gửi USER_STATUS_NOTIFY tới TẤT CẢ client khác (trừ chính người vừa đổi
         /// trạng thái). Chạy nền (Task.Run) vì Add/Remove đang được gọi đồng bộ từ AuthHandler,
         /// không muốn chặn luồng xử lý client hiện tại chỉ để chờ gửi thông báo cho người khác.
-        /// </summary>
+  
         private void BroadcastStatus(ClientSession session, bool isOnline)
         {
             var packet = new Packet<UserStatusNotifyData>

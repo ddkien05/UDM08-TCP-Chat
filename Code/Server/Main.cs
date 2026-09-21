@@ -25,13 +25,8 @@ namespace ChatTCP.Server
             ClientManager clientManager =
                 new ClientManager(userRepository);
 
-            IMessageRepository messageRepository =
-                new MessageRepository();
-
             MessageRouter messageRouter =
-                new MessageRouter(
-                    clientManager.ClientMap,
-                    messageRepository);
+              new MessageRouter(clientManager.ClientMap);
 
             AuthHandler authHandler =
                 new AuthHandler(userRepository, clientManager, messageRouter);

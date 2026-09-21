@@ -10,20 +10,15 @@ namespace ChatTCP.Server.Services;
 public class MessageRouter
 {
     private readonly ConcurrentDictionary<string, ClientSession> _clientMap;
-    private readonly IMessageRepository _messageRepository;
 
-    public MessageRouter(
-        ConcurrentDictionary<string, ClientSession> clientMap,
-        IMessageRepository messageRepository)
+    public MessageRouter(ConcurrentDictionary<string, ClientSession> clientMap)
     {
         _clientMap = clientMap;
-        _messageRepository = messageRepository;
     }
 
-    /// <summary>
     /// Định tuyến tin nhắn PRIVATE.
     /// Hỗ trợ tin nhắn thường, Reply và Forward.
-    /// </summary>
+
     public async Task RouteChatMessageAsync(
         Packet<ChatMessageData> chatPacket,
         ClientSession senderSession)
@@ -36,66 +31,8 @@ public class MessageRouter
             if (messageData.TargetType != "PRIVATE")
                 return;
 
-            // =====================================================
-            // 1. KIỂM TRA REPLY
-            // =====================================================
-
-            if (messageData.ReplyTo != null &&
-                !string.IsNullOrWhiteSpace(messageData.ReplyTo.MsgId))
-            {
-                if (int.TryParse(
-                    messageData.ReplyTo.MsgId,
-                    out int replyMessageId))
-                {
-                    var originalMessage =
-                        _messageRepository.GetById(replyMessageId);
-
-                    if (originalMessage == null)
-                    {
-                        await SendErrorAsync(
-                            senderSession,
-                            chatPacket.Seq,
-                            404,
-                            $"Không tìm thấy tin nhắn gốc ID={replyMessageId}."
-                        );
-
-                        return;
-                    }
-
-                    Console.WriteLine(
-                        $"[REPLY] User {messageData.Sender.UserId} " +
-                        $"reply MessageId={replyMessageId}"
-                    );
-                }
-            }
-
-            // =====================================================
-            // 2. KIỂM TRA FORWARD
-            // =====================================================
-
-            /*
-             * ChatMessageData hiện tại của m chỉ có:
-             *
-             * IsForwarded
-             * ForwardFromName
-             *
-             * Chưa có ForwardFromMessageId.
-             *
-             * Vì vậy ở đây chỉ ghi nhận tin nhắn Forward,
-             * chưa thể tìm MessageId gốc.
-             */
-
-            if (messageData.IsForwarded)
-            {
-                Console.WriteLine(
-                    $"[FORWARD] User {messageData.Sender.UserId} " +
-                    $"forward message from {messageData.ForwardFromName}"
-                );
-            }
-
-            // =====================================================
             // 3. LẤY DANH SÁCH NGƯỜI NHẬN
-            // =====================================================
+
 
             string[] targets = messageData.TargetId
                 .Split(
@@ -118,9 +55,9 @@ public class MessageRouter
                 return;
             }
 
-            // =====================================================
+
             // 4. GỬI MESSAGE ĐẾN TỪNG NGƯỜI NHẬN
-            // =====================================================
+
 
             foreach (string targetId in targets)
             {
@@ -173,9 +110,9 @@ public class MessageRouter
         }
     }
 
-    // =============================================================
+
     // GỬI ERROR
-    // =============================================================
+ 
 
     private static async Task SendErrorAsync(
         ClientSession senderSession,

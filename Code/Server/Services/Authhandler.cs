@@ -13,7 +13,6 @@ namespace ChatTCP.Server.Services
 
     /// Xử lý Login/Register bằng đúng giao thức JSON 
     /// Packet&lt;AuthRequestData&gt;/Packet&lt;AuthResponseData&gt;)
-    ///
 
 
     public class AuthHandler
