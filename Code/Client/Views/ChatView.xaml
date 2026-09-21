@@ -38,18 +38,22 @@
                         Cursor="Hand"
                         Click="BackButton_Click"
                         ToolTip="Quay lại danh sách chat"/>
-
                 <Grid Width="36"
-                      Height="36"
-                      Margin="0,0,10,0">
+      Height="36"
+      Margin="0,0,10,0">
                     <Ellipse Fill="#DCEEFF"/>
                     <TextBlock x:Name="ChatTargetInitial"
-                               Text="?"
-                               FontSize="15"
-                               FontWeight="Bold"
-                               Foreground="#0A84FF"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
+               Text="?"
+               FontSize="15"
+               FontWeight="Bold"
+               Foreground="#0A84FF"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"/>
+                    <Ellipse>
+                        <Ellipse.Fill>
+                            <ImageBrush x:Name="ChatTargetAvatarBrush" Stretch="UniformToFill"/>
+                        </Ellipse.Fill>
+                    </Ellipse>
                 </Grid>
 
                 <StackPanel VerticalAlignment="Center">

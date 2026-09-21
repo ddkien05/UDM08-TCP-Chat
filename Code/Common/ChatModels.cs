@@ -133,3 +133,8 @@ public class ErrorData
     [JsonPropertyName("code")] public int Code { get; set; }
     [JsonPropertyName("message")] public string Message { get; set; } = string.Empty;
 }
+/// <summary>Dữ liệu client gửi lên khi đổi avatar (ảnh PNG đã thu nhỏ, mã hóa base64).</summary>
+public class UpdateAvatarData
+{
+    [JsonPropertyName("avatar_url")] public string AvatarUrl { get; set; } = string.Empty;
+}

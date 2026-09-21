@@ -42,15 +42,13 @@ namespace ChatTCP.Client.Views
         /// KHÔNG dùng khi chạy thật vì socket này chưa hề đăng nhập (IsConnected = false),
         /// nên mọi tin nhắn gửi đi sẽ không tới được server.
         /// </summary>
-        public ChatView() : this(new ClientSocketService(), "user_test", "Contact (demo)", false)
-        {
-        }
 
         /// <summary>
         /// Constructor thật: dùng lại đúng ClientSocketService đã LoginAsync thành công
         /// (đang chạy vòng lặp nhận tin) và targetId thật của người/nhóm sẽ chat cùng.
         /// </summary>
-        public ChatView(ClientSocketService socketService, string targetId, string targetDisplayName, bool isOnline = false)
+        public ChatView(ClientSocketService socketService, string targetId, string targetDisplayName,
+                 bool isOnline = false, System.Windows.Media.ImageSource? avatar = null)
         {
             InitializeComponent();
             _socketService = socketService;
@@ -77,6 +75,12 @@ namespace ChatTCP.Client.Views
             Unloaded += (s, e) => ViewModel.Dispose();
 
             ChatTargetNameText.Text = targetDisplayName;
+
+            if (avatar != null)
+            {
+                ChatTargetAvatarBrush.ImageSource = avatar;
+                ChatTargetInitial.Visibility = Visibility.Collapsed;
+            }
             ChatTargetInitial.Text = string.IsNullOrWhiteSpace(targetDisplayName)
                 ? "?"
                 : targetDisplayName.Trim().Substring(0, 1).ToUpper();

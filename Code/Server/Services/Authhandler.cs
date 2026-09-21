@@ -210,6 +210,14 @@ namespace ChatTCP.Server.Services
                         case "GET_USERS":
                             await SendUserListAsync(stream, basePacket.Seq, session);
                             break;
+                        case "UPDATE_AVATAR":
+                            var avatarPacket = JsonSerializer.Deserialize<Packet<UpdateAvatarData>>(json);
+                            string? avatarData = avatarPacket?.Data?.AvatarUrl;
+                            if (!string.IsNullOrEmpty(avatarData) && avatarData.Length < 500_000)
+                            {
+                                _userRepository.UpdateAvatar(session.UserId, avatarData);
+                            }
+                            break;
 
                         default:
                             Console.WriteLine($"[AuthHandler] Bỏ qua gói tin không xác định: {basePacket.Type}");

@@ -50,8 +50,10 @@ namespace ChatTCP.Client.Networking
         public string LoggedInUserId { get; private set; } = string.Empty;
 
         /// <summary>DisplayName của tài khoản vừa đăng nhập thành công.</summary>
-        public string LoggedInDisplayName { get; private set; } = string.Empty;
+        public string LoggedInDisplayName  { get; private set; } = string.Empty;
 
+        /// <summary>Avatar (base64) của tài khoản vừa đăng nhập, lấy từ AUTH_RESPONSE.</summary>
+        public string? LoggedInAvatarUrl { get; private set; }
         /// <summary>
         /// Bắn khi nhận được gói tin CHAT_MSG thường từ server.
         /// Bao gồm cả loại Reply, Forward và tin nhắn tiêu chuẩn.
@@ -149,7 +151,11 @@ namespace ChatTCP.Client.Networking
                 {
                     LoggedInDisplayName = displayNameEl.GetString() ?? string.Empty;
                 }
-
+                if (resPacket.Data.TryGetProperty("avatar_url", out var avatarEl)
+    && avatarEl.ValueKind == JsonValueKind.String)
+                {
+                    LoggedInAvatarUrl = avatarEl.GetString();
+                }
                 // Nếu thành công, bắt đầu vòng lặp nhận tin nhắn
                 _cts = new CancellationTokenSource();
                 _ = Task.Run(() => ReceiveLoopAsync(_cts.Token));
@@ -497,6 +503,19 @@ namespace ChatTCP.Client.Networking
                 Type = "GET_USERS",
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 Data = null
+            };
+
+            await SendPacketAsync(packet);
+        }
+        public async Task UpdateAvatarAsync(string base64Png)
+        {
+            LoggedInAvatarUrl = base64Png;
+
+            var packet = new Packet<UpdateAvatarData>
+            {
+                Type = "UPDATE_AVATAR",
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Data = new UpdateAvatarData { AvatarUrl = base64Png }
             };
 
             await SendPacketAsync(packet);

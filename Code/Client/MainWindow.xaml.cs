@@ -44,15 +44,15 @@ namespace Client
             MainContent.Content = contactList;
         }
 
-        public void ShowChatView(string targetUserId, string targetDisplayName, bool isOnline)
+        public void ShowChatView(string targetUserId, string targetDisplayName, bool isOnline,
+                          System.Windows.Media.ImageSource? avatar)
         {
             if (_socketService == null) return;
 
-            // Đang mở đúng cuộc chat này -> tin nhắn tới từ người này không tính "chưa đọc"
             ConversationStore.Instance.ActiveChatUserId = targetUserId;
             ConversationStore.Instance.MarkRead(targetUserId);
 
-            var chatView = new ChatView(_socketService, targetUserId, targetDisplayName, isOnline);
+            var chatView = new ChatView(_socketService, targetUserId, targetDisplayName, isOnline, avatar);
             chatView.BackRequested += () => ShowContactList(_socketService);
 
             MainContent.Content = chatView;

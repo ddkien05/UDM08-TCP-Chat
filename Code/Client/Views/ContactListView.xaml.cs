@@ -27,8 +27,7 @@ namespace ChatTCP.Client.Views
         /// Bắn khi người dùng chọn 1 liên hệ để mở màn hình chat.
         /// (targetUserId, targetDisplayName, isOnline)
         /// </summary>
-        public event Action<string, string, bool>? ChatSelected;
-
+        public event Action<string, string, bool, System.Windows.Media.ImageSource?>? ChatSelected;
         public ContactListView() : this(null)
         {
         }
@@ -112,6 +111,48 @@ namespace ChatTCP.Client.Views
 
             UpdateEmptyState();
         }
+        /// <summary>Đọc ảnh từ file, thu nhỏ còn 128px rồi trả về chuỗi base64 (PNG).</summary>
+        private static string ImageFileToBase64Avatar(string path)
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri(path);
+            bmp.DecodePixelWidth = 128;
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.EndInit();
+            bmp.Freeze();
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bmp));
+
+            using var ms = new MemoryStream();
+            encoder.Save(ms);
+            return Convert.ToBase64String(ms.ToArray());
+        }
+
+        /// <summary>Chuyển chuỗi base64 thành ảnh để hiển thị. Trả về null nếu rỗng hoặc lỗi.</summary>
+        private static BitmapImage? Base64ToBitmap(string? base64)
+        {
+            if (string.IsNullOrWhiteSpace(base64)) return null;
+
+            try
+            {
+                byte[] bytes = Convert.FromBase64String(base64);
+                using var ms = new MemoryStream(bytes);
+
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.StreamSource = ms;
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         // =====================================================
         // NHẬN DANH SÁCH LIÊN HỆ THẬT TỪ SERVER
@@ -129,6 +170,7 @@ namespace ChatTCP.Client.Views
                     Username = user.Username,
                     UserId = user.UserId,
                     IsOnline = user.IsOnline,
+                    AvatarPath = Base64ToBitmap(user.AvatarUrl),
                     LastMessage = "Bắt đầu trò chuyện",
                     Time = string.Empty
                 };
@@ -357,7 +399,7 @@ namespace ChatTCP.Client.Views
                 // Mở chat -> coi như đã đọc hết, xóa badge thông báo ngay lập tức
                 ConversationStore.Instance.MarkRead(targetId);
 
-                ChatSelected?.Invoke(targetId, chat.Name, chat.IsOnline);
+                ChatSelected?.Invoke(targetId, chat.Name, chat.IsOnline, chat.AvatarPath);
 
                 // Bỏ chọn để có thể bấm lại cùng 1 contact và mở lại ChatView
                 ChatList.SelectedItem = null;
@@ -377,18 +419,12 @@ namespace ChatTCP.Client.Views
         // ĐỔI AVATAR
         // =====================================================
 
-        private void ChangeAvatarButton_Click(
-            object sender,
-            RoutedEventArgs e)
+        private async void ChangeAvatarButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
             {
                 Title = "Chọn ảnh đại diện",
-
-                Filter =
-                    "Ảnh (*.png;*.jpg;*.jpeg;*.bmp;*.webp)|" +
-                    "*.png;*.jpg;*.jpeg;*.bmp;*.webp",
-
+                Filter = "Ảnh (*.png;*.jpg;*.jpeg;*.bmp;*.webp)|*.png;*.jpg;*.jpeg;*.bmp;*.webp",
                 Multiselect = false
             };
 
@@ -397,38 +433,19 @@ namespace ChatTCP.Client.Views
 
             try
             {
-                // Tạo folder nếu chưa tồn tại
-                Directory.CreateDirectory(
-                    _avatarFolder);
+                string base64 = ImageFileToBase64Avatar(dialog.FileName);
 
-                // Load ảnh user vừa chọn
-                BitmapImage bitmap =
-                    LoadBitmap(dialog.FileName);
+                var image = Base64ToBitmap(base64);
+                if (image != null)
+                    SetMyAvatar(image);
 
-                // Lưu thành PNG
-                using (FileStream stream =
-                       File.Create(_avatarFile))
-                {
-                    var encoder =
-                        new PngBitmapEncoder();
-
-                    encoder.Frames.Add(
-                        BitmapFrame.Create(bitmap));
-
-                    encoder.Save(stream);
-                }
-
-                // Hiển thị avatar mới
-                SetMyAvatar(_avatarFile);
+                if (_socketService != null)
+                    await _socketService.UpdateAvatarAsync(base64);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Không thể đổi ảnh đại diện:\n" +
-                    ex.Message,
-                    "Avatar",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                MessageBox.Show("Không thể đổi ảnh đại diện:\n" + ex.Message,
+                    "Avatar", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -438,28 +455,20 @@ namespace ChatTCP.Client.Views
 
         private void LoadSavedAvatar()
         {
-            if (File.Exists(_avatarFile))
-            {
-                SetMyAvatar(_avatarFile);
-            }
+            // Lấy avatar của CHÍNH tài khoản đang đăng nhập từ server (không dùng file chung nữa)
+            var image = Base64ToBitmap(_socketService?.LoggedInAvatarUrl);
+            if (image != null)
+                SetMyAvatar(image);
         }
 
         // =====================================================
         // HIỂN THỊ AVATAR
         // =====================================================
 
-        private void SetMyAvatar(
-            string imagePath)
+        private void SetMyAvatar(System.Windows.Media.ImageSource image)
         {
-            BitmapImage bitmap =
-                LoadBitmap(imagePath);
-
-            MyAvatarBrush.ImageSource =
-                bitmap;
-
-            // Có avatar rồi thì ẩn icon mặc định
-            DefaultAvatarIcon.Visibility =
-                Visibility.Collapsed;
+            MyAvatarBrush.ImageSource = image;
+            DefaultAvatarIcon.Visibility = Visibility.Collapsed;
         }
 
         // =====================================================
@@ -562,6 +571,7 @@ namespace ChatTCP.Client.Views
             get => _name;
             set => SetField(ref _name, value);
         }
+        public System.Windows.Media.ImageSource? AvatarPath { get; set; }
 
         private string _username = string.Empty;
         public string Username
@@ -622,8 +632,7 @@ namespace ChatTCP.Client.Views
 
         /// <summary>True khi có tin nhắn chưa đọc — dùng để bôi đậm tên/preview giống Messenger.</summary>
         public bool HasUnread => UnreadCount > 0;
-
-        public string? AvatarPath { get; set; }
+      
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
