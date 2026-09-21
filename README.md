@@ -37,14 +37,14 @@
 
 ## 👥 Thành viên & Phân công
 
-| STT | Thành viên | Module / Chức năng                                           |
-| --- | ---------- | ------------------------------------------------------------ |
-| 1   | Kiên       | TCP Server – Connection Listener & Client Manager + Database |
-| 2   | Khương     | Concurrent Client Handling & Disconnect/Error Handling       |
-| 3   | Thanh Thuý | Message Protocol & Message Routing                           |
-| 4   | Nam Lâm    | Async Client Networking & GUI (Danh sách/Avatar)             |
-| 5   | Minh Phước | Async Client Networking & GUI (Chat)                         |
-| 6   |            |                                                              |
+| STT | Thành viên | Module / Chức năng                                                 |
+| --- | ---------- | -------------------------------------------------------------------|
+| 1   | Kiên       | TCP Server – Connection Listener & Client Manager, Auth + Database |
+| 2   | Khương     | Concurrent Client Handling & Disconnect/Error Handling             |
+| 3   | Thanh Thuý | Message Protocol & Message Routing                                 |
+| 4   | Nam Lâm    | Async Client Networking & GUI (Danh sách/Avatar)                   |
+| 5   | Minh Phước | Async Client Networking & GUI (Chat)                               |
+| 6   |            |                                                                    |
 
 ---
 
