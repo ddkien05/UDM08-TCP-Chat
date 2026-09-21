@@ -83,7 +83,7 @@ public class ChatMessageData
     [JsonIgnore] public bool HasReply => ReplyTo != null;
 
     /// <summary>Chỉ dùng phía Client: true nếu là tin Broadcast (để XAML hiển thị nhãn thông báo chung).</summary>
-    [JsonIgnore] public bool IsBroadcast => TargetType == "BROADCAST";
+  
 
     /// <summary>
     /// Thời điểm hiển thị trên giao diện (giờ local), gán ở phía Client khi gửi/nhận.

@@ -83,7 +83,7 @@ namespace ChatTCP.Server.Services
                     return;
                 }
 
-                // Lưu ý: đang lưu password thô, chưa băm (hash).
+                // đang lưu password thô, chưa băm (hash).
                 int userId = _userRepository.CreateUser(request.Username, request.Password, request.DisplayName);
 
                 if (!string.IsNullOrEmpty(request.AvatarUrl))
