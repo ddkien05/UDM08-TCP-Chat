@@ -32,7 +32,7 @@ namespace ChatTCP.Server.Networking
             _listener.Start();
             _isRunning = true;
 
-            Console.WriteLine($"[ChatServer] Server đã chạy, đang lắng nghe tại cổng {ServerPort}...");
+            Console.WriteLine($"[ChatServer] Server da chay, dang lang nghe tai cong {ServerPort}...");
 
             Thread acceptThread = new Thread(AcceptLoop);
             acceptThread.IsBackground = true;
@@ -43,7 +43,7 @@ namespace ChatTCP.Server.Networking
         {
             _isRunning = false;
             _listener?.Stop();
-            Console.WriteLine("[ChatServer] Server đã dừng.");
+            Console.WriteLine("[ChatServer] Server da dung.");
         }
 
         private void AcceptLoop()
@@ -55,7 +55,7 @@ namespace ChatTCP.Server.Networking
                     TcpClient newClient = _listener.AcceptTcpClient();
 
                     string ip = newClient.Client.RemoteEndPoint.ToString();
-                    Console.WriteLine("[ChatServer] Có client mới kết nối: " + ip + " — đang chờ Login/Register...");
+                    Console.WriteLine("[ChatServer] Co client moi ket noi: " + ip + " — dang cho Login/Register...");
 
                     Thread authThread = new Thread(() =>
                     {
@@ -67,7 +67,7 @@ namespace ChatTCP.Server.Networking
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("[ChatServer] Lỗi không mong muốn khi xử lý client: " + ex.Message);
+                            Console.WriteLine("[ChatServer] Loi khong mong muon xu li client: " + ex.Message);
                         }
                     });
                     authThread.IsBackground = true;
@@ -79,7 +79,7 @@ namespace ChatTCP.Server.Networking
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("[ChatServer] Lỗi không mong muốn trong AcceptLoop: " + ex.Message);
+                    Console.WriteLine("[ChatServer] Loi khong mong muon trong AcceptLoop: " + ex.Message);
                 }
             }
         }

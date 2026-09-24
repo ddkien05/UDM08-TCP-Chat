@@ -44,7 +44,7 @@ namespace ChatTCP.Server.Services
                 Packet<AuthRequestData>? requestPacket = JsonSerializer.Deserialize<Packet<AuthRequestData>>(json);
                 if (requestPacket == null || requestPacket.Data == null || string.IsNullOrWhiteSpace(requestPacket.Type))
                 {
-                    await SendAuthResponseAsync(stream, 0, 400, "Gói xác thực không hợp lệ", null);
+                    await SendAuthResponseAsync(stream, 0, 400, "Goi xac thuc khong hop le", null);
                     client.Close();
                     return;
                 }
@@ -60,14 +60,14 @@ namespace ChatTCP.Server.Services
                         await HandleLoginAsync(client, stream, requestPacket.Seq, request);
                         break;
                     default:
-                        await SendAuthResponseAsync(stream, requestPacket.Seq, 400, "Loại gói tin không hợp lệ", null);
+                        await SendAuthResponseAsync(stream, requestPacket.Seq, 400, "Loai goi tin khong hop le", null);
                         client.Close();
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("[AuthHandler] Lỗi không mong muốn: " + ex.Message);
+                Console.WriteLine("[AuthHandler] Loi khong mong muon: " + ex.Message);
                 client.Close();
             }
         }
@@ -78,7 +78,7 @@ namespace ChatTCP.Server.Services
             {
                 if (_userRepository.GetByUsername(request.Username) != null)
                 {
-                    await SendAuthResponseAsync(stream, seq, 409, "Username đã tồn tại", null);
+                    await SendAuthResponseAsync(stream, seq, 409, "Username da ton tai", null);
                     client.Close();
                     return;
                 }
@@ -99,7 +99,7 @@ namespace ChatTCP.Server.Services
                     AvatarUrl = request.AvatarUrl
                 };
 
-                await SendAuthResponseAsync(stream, seq, 200, "Đăng ký thành công", newUser);
+                await SendAuthResponseAsync(stream, seq, 200, "dang ki thanh cong", newUser);
 
                 var session = new ClientSession
                 {
@@ -115,8 +115,8 @@ namespace ChatTCP.Server.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("[AuthHandler] Lỗi khi Register: " + ex.Message);
-                await SendAuthResponseAsync(stream, seq, 500, "Lỗi hệ thống, thử lại sau", null);
+                Console.WriteLine("[AuthHandler] Loi khi Register: " + ex.Message);
+                await SendAuthResponseAsync(stream, seq, 500, "Loi he thong , thu lai sau", null);
                 client.Close();
             }
         }
@@ -129,12 +129,12 @@ namespace ChatTCP.Server.Services
 
                 if (user == null || user.PasswordHash != request.Password)
                 {
-                    await SendAuthResponseAsync(stream, seq, 401, "Sai tài khoản hoặc mật khẩu", null);
+                    await SendAuthResponseAsync(stream, seq, 401, "Sai tai khoan hoac mat khau", null);
                     client.Close();
                     return;
                 }
 
-                await SendAuthResponseAsync(stream, seq, 200, "Đăng nhập thành công", user);
+                await SendAuthResponseAsync(stream, seq, 200, "Dang nhap thanh cong", user);
 
                 var session = new ClientSession
                 {
@@ -152,8 +152,8 @@ namespace ChatTCP.Server.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("[AuthHandler] Lỗi khi Login: " + ex.Message);
-                await SendAuthResponseAsync(stream, seq, 500, "Lỗi hệ thống, thử lại sau", null);
+                Console.WriteLine("[AuthHandler] Loi khi Login: " + ex.Message);
+                await SendAuthResponseAsync(stream, seq, 500, "Loi he thong, thu lai sau", null);
                 client.Close();
             }
         }
@@ -219,14 +219,14 @@ namespace ChatTCP.Server.Services
                             break;
 
                         default:
-                            Console.WriteLine($"[AuthHandler] Bỏ qua gói tin không xác định: {basePacket.Type}");
+                            Console.WriteLine($"[AuthHandler] Bo qua goi tin khong xac dinh: {basePacket.Type}");
                             break;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[AuthHandler] Lỗi khi lắng nghe {session.Username}: {ex.Message}");
+                Console.WriteLine($"[AuthHandler] Loi khi lang nghe {session.Username}: {ex.Message}");
             }
             finally
             {

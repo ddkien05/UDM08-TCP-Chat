@@ -32,7 +32,7 @@ namespace ChatTCP.Server.Data
             if (!File.Exists(schemaPath))
             {
                 throw new FileNotFoundException(
-                    "Không tìm thấy file Schema.sql.",
+                    "Khong tim thay file Schema.sql.",
                     schemaPath);
             }
 
@@ -47,7 +47,7 @@ namespace ChatTCP.Server.Data
             cmd.ExecuteNonQuery();
 
             Console.WriteLine(
-                "Database và các bảng đã được khởi tạo thành công!");
+                "Database va cac Bang da duoc khoi tao thanh cong!");
 
             Console.WriteLine(
                 $"Database: {DbPath}");

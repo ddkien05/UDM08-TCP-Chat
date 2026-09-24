@@ -12,11 +12,11 @@ namespace ChatTCP.Server
             try
             {
                 DbConnectionFactory.Initialize();
-                Console.WriteLine("Khởi tạo Database thành công!");
+                Console.WriteLine("Khoi tao Database thanh cong!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi khởi tạo Database: {ex.Message}");
+                Console.WriteLine($"Loi khoi tao Database: {ex.Message}");
                 return;
             }
 
@@ -40,7 +40,7 @@ namespace ChatTCP.Server
             server.Start();
             heartbeatMonitor.Start();
 
-            Console.WriteLine("Nhấn Enter để dừng server...");
+            Console.WriteLine("Nhan Enter de dung server...");
             Console.ReadLine();
 
             heartbeatMonitor.Stop();

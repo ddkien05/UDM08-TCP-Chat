@@ -26,7 +26,7 @@ namespace ChatTCP.Server.Services
             monitorThread.IsBackground = true;
             monitorThread.Start();
 
-            Console.WriteLine("[HeartbeatMonitor] Bắt đầu theo dõi kết nối, kiểm tra mỗi " + (CheckIntervalMs / 1000) + " giây.");
+            Console.WriteLine("[HeartbeatMonitor] Bat dau theo doi ket noi, kiem tra moi " + (CheckIntervalMs / 1000) + " giay.");
         }
 
         public void Stop()
@@ -44,7 +44,7 @@ namespace ChatTCP.Server.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("[HeartbeatMonitor] Lỗi không mong muốn: " + ex.Message);
+                    Console.WriteLine("[HeartbeatMonitor] Loi khong mong muon: " + ex.Message);
                 }
 
                 Thread.Sleep(CheckIntervalMs);
@@ -59,7 +59,7 @@ namespace ChatTCP.Server.Services
             {
                 if (IsDisconnected(session.TcpClient))
                 {
-                    Console.WriteLine($"[HeartbeatMonitor] Phát hiện {session.Username} mất kết nối đột ngột, đang gỡ khỏi danh sách online...");
+                    Console.WriteLine($"[HeartbeatMonitor] Phat hien {session.Username} mat ket noi dot ngot, dang go khoi danh sach online...");
                     _clientManager.Remove(session.TcpClient);
                 }
             }

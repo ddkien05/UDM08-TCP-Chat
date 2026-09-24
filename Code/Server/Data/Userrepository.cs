@@ -24,7 +24,7 @@ namespace ChatTCP.Server.Data
             }
             catch (SqliteException ex)
             {
-                Console.WriteLine("[UserRepository] Lỗi GetByUsername: " + ex.Message);
+                Console.WriteLine("[UserRepository] Loi GetByUsername: " + ex.Message);
                 return null; // không để lỗi Database làm sập server, chỉ báo không tìm thấy
             }
         }
@@ -47,7 +47,7 @@ namespace ChatTCP.Server.Data
             }
             catch (SqliteException ex)
             {
-                Console.WriteLine("[UserRepository] Lỗi GetById: " + ex.Message);
+                Console.WriteLine("[UserRepository] Loi GetById: " + ex.Message);
                 return null;
             }
         }
@@ -70,7 +70,7 @@ namespace ChatTCP.Server.Data
             }
             catch (SqliteException ex)
             {
-                Console.WriteLine("[UserRepository] Lỗi CreateUser: " + ex.Message);
+                Console.WriteLine("[UserRepository] Loi CreateUser: " + ex.Message);
                 throw; // tầng gọi sẽ bắt lại để xử lý vd báo FAIL về client, không để sập server
             }
         }
@@ -89,7 +89,7 @@ namespace ChatTCP.Server.Data
             }
             catch (SqliteException ex)
             {
-                Console.WriteLine("[UserRepository] Lỗi UpdateAvatar: " + ex.Message);
+                Console.WriteLine("[UserRepository] Loi UpdateAvatar: " + ex.Message);
             }
         }
 
@@ -107,7 +107,7 @@ namespace ChatTCP.Server.Data
             }
             catch (SqliteException ex)
             {
-                Console.WriteLine("[UserRepository] Lỗi SetOnlineStatus: " + ex.Message);
+                Console.WriteLine("[UserRepository] Loi SetOnlineStatus: " + ex.Message);
             }
         }
 
@@ -130,7 +130,7 @@ namespace ChatTCP.Server.Data
             }
             catch (SqliteException ex)
             {
-                Console.WriteLine("[UserRepository] Lỗi GetAllUsers: " + ex.Message);
+                Console.WriteLine("[UserRepository] Loi GetAllUsers: " + ex.Message);
             }
             return result;
         }

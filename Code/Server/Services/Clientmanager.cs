@@ -50,10 +50,10 @@ namespace ChatTCP.Server.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("[ClientManager] Lỗi cập nhật online status: " + ex.Message);
+                Console.WriteLine("[ClientManager] Loi cap nhat online status: " + ex.Message);
             }
 
-            Console.WriteLine($"[ClientManager] {session.Username} online. Tổng số hiện tại: {Count}");
+            Console.WriteLine($"[ClientManager] {session.Username} online. Tong so hien tai: {Count}");
 
             // Báo cho các client khác biết user này vừa online, để chấm trạng thái
             // trên danh sách chat của họ cập nhật ngay mà không cần load lại (real-time).
@@ -81,7 +81,7 @@ namespace ChatTCP.Server.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("[ClientManager] Lỗi khi đóng socket: " + ex.Message);
+                Console.WriteLine("[ClientManager] Loi khi dong socket: " + ex.Message);
             }
 
             if (session != null)
@@ -92,10 +92,10 @@ namespace ChatTCP.Server.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("[ClientManager] Lỗi cập nhật offline status: " + ex.Message);
+                    Console.WriteLine("[ClientManager] Loi cap nhat offline status: " + ex.Message);
                 }
 
-                Console.WriteLine($"[ClientManager] {session.Username} offline. Tổng số hiện tại: {Count}");
+                Console.WriteLine($"[ClientManager] {session.Username} offline. Tong so hien tai: {Count}");
 
                 // Báo cho các client khác biết user này vừa offline (thoát app / mất mạng /
                 // bị HeartbeatMonitor gỡ) để cập nhật chấm trạng thái real-time.
@@ -184,7 +184,7 @@ namespace ChatTCP.Server.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[ClientManager] Lỗi gửi USER_STATUS_NOTIFY tới {target.Username}: {ex.Message}");
+                    Console.WriteLine($"[ClientManager] Loi gui USER_STATUS_NOTIFY toi {target.Username}: {ex.Message}");
                 }
             }
         }
