@@ -31,6 +31,7 @@
   - `Microsoft.Data.Sqlite` — Server dùng SQLite để lưu tài khoản người dùng.
   - `BCrypt.Net-Next` — mã hoá mật khẩu.
 - Không cần cài SQL Server/MySQL riêng: Database SQLite (`ChatApp.db`) được Server tự tạo khi chạy lần đầu.
+
 ---
 
 ## ✨ Chức năng
@@ -45,6 +46,7 @@
 - Duy trì kết nối bằng cơ chế Heartbeat (Ping/Pong)
 
 ---
+
 ---
 
 ## 🏗️ Kiến trúc hệ thống
@@ -61,19 +63,17 @@ Dự án theo mô hình **Client – Server** giao tiếp qua **TCP Socket**, g�
 - **Client** (WPF, kiến trúc **MVVM**): giao diện Đăng nhập/Đăng ký, Danh sách liên hệ, Chat (Reply/Forward/Emoji/Avatar), giao tiếp Server qua `ClientSocketService`.
 - **Common**: dùng chung cho cả Server & Client — định nghĩa `Packet<T>`/model dữ liệu (`ChatModels.cs`) và `MessageProtocol.cs` (đóng/mở khung gói tin Length-Prefixed Frame).
 
-**Luồng dữ liệu:** Client mở kết nối TCP tới Server → gửi gói `AUTH_REQ` (Login/Register, JSON) → Server xác thực, trả `AUTH_RESPONSE` → nếu thành công, Server chuyển sang vòng lặp lắng nghe `CHAT_MSG`/`GET_USERS`/`UPDATE_AVATAR` từ client đó → `MessageRouter` định tuyến tin nhắn tới người nhận (PRIVATE) hoặc toàn bộ client online (Broadcast) → mỗi thay đổi Online/Offline được `ClientManager` phát `USER_STATUS_NOTIFY` cho các client còn lại.
----
+## **Luồng dữ liệu:** Client mở kết nối TCP tới Server → gửi gói `AUTH_REQ` (Login/Register, JSON) → Server xác thực, trả `AUTH_RESPONSE` → nếu thành công, Server chuyển sang vòng lặp lắng nghe `CHAT_MSG`/`GET_USERS`/`UPDATE_AVATAR` từ client đó → `MessageRouter` định tuyến tin nhắn tới người nhận (PRIVATE) hoặc toàn bộ client online (Broadcast) → mỗi thay đổi Online/Offline được `ClientManager` phát `USER_STATUS_NOTIFY` cho các client còn lại.
 
 ## 👥 Thành viên & Phân công
 
 | STT | Thành viên | Module / Chức năng                                                 |
-| --- | ---------- | -------------------------------------------------------------------|
+| --- | ---------- | ------------------------------------------------------------------ |
 | 1   | Kiên       | TCP Server – Connection Listener & Client Manager, Auth + Database |
 | 2   | Khương     | Concurrent Client Handling & Disconnect/Error Handling             |
 | 3   | Thanh Thuý | Message Protocol & Message Routing                                 |
 | 4   | Nam Lâm    | Async Client Networking & GUI (Danh sách/Avatar)                   |
 | 5   | Minh Phước | Async Client Networking & GUI (Chat)                               |
-| 6   |            |                                                                    |
 
 ---
 
@@ -137,19 +137,19 @@ Chi tiết đầy đủ xem tại [`DOCX/protocol.md`](./DOCX/protocol.md).
 
 ---
 
-
 ## ⚙️ Cấu hình
 
 Hiện dự án chưa dùng file config riêng (appsettings/.env) — các giá trị cấu hình đang khai báo trực tiếp trong code:
 
-| Cấu hình | Nơi khai báo | Giá trị mặc định |
-| --- | --- | --- |
-| Cổng lắng nghe của Server | `Code/Server/Networking/ChatServer.cs` (`ServerPort`) | `8888` |
-| IP/Port Server mà Client kết nối tới | `Code/Client/Views/LoginView.xaml.cs`, `Code/Client/Views/RegisterView.xaml.cs` | `127.0.0.1 : 8888` |
-| Đường dẫn Database SQLite | `Code/Server/Data/DbConnectionFactory.cs` (`DbPath`) | `<thư mục chạy Server>/ChatApp.db` (tự tạo khi Initialize lần đầu) |
-| Schema khởi tạo Database | `Code/Server/Data/Schema.sql` | Tự nạp khi Server khởi động lần đầu |
+| Cấu hình                             | Nơi khai báo                                                                    | Giá trị mặc định                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Cổng lắng nghe của Server            | `Code/Server/Networking/ChatServer.cs` (`ServerPort`)                           | `8888`                                                             |
+| IP/Port Server mà Client kết nối tới | `Code/Client/Views/LoginView.xaml.cs`, `Code/Client/Views/RegisterView.xaml.cs` | `127.0.0.1 : 8888`                                                 |
+| Đường dẫn Database SQLite            | `Code/Server/Data/DbConnectionFactory.cs` (`DbPath`)                            | `<thư mục chạy Server>/ChatApp.db` (tự tạo khi Initialize lần đầu) |
+| Schema khởi tạo Database             | `Code/Server/Data/Schema.sql`                                                   | Tự nạp khi Server khởi động lần đầu                                |
 
 **Muốn đổi cổng hoặc chạy Client kết nối tới Server ở máy khác (LAN):**
+
 1. Đổi `ServerPort` trong `ChatServer.cs` nếu muốn đổi cổng Server.
 2. Sửa IP/port trong `LoginView.xaml.cs` và `RegisterView.xaml.cs` (thành IP LAN của máy chạy Server), build lại Client.
 3. Đảm bảo Firewall Windows cho phép cổng đã chọn.
@@ -175,16 +175,16 @@ Chạy project **Server** trước, sau đó chạy project **Client** để k�
 
 Tạo branch:
 
-```bash
+```
 git checkout -b feature/ten-chuc-nang
 ```
 
 Sau khi hoàn thành:
 
-```bash
+```
 git add .
 git commit -m "Mo ta chuc nang"
 git push origin feature/ten-chuc-nang
 ```
 
-Sau đó tạo **Pull Request** để merge vào `dev`.
+Sau đó tạo **Pull Request** để merge vào `dev`.Tới khi hoàn thành ứng dụng thì merge vào `main`
