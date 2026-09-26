@@ -74,6 +74,7 @@ Dự án theo mô hình **Client – Server** giao tiếp qua **TCP Socket**, g�
 | 3   | Thanh Thuý | Message Protocol & Message Routing                                 |
 | 4   | Nam Lâm    | Async Client Networking & GUI (Danh sách/Avatar)                   |
 | 5   | Minh Phước | Async Client Networking & GUI (Chat)                               |
+| 6   | Thái Toàn  | 0% tham gia                                                        |
 
 ---
 
